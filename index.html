@@ -37,6 +37,9 @@ html[data-theme="light"] nav{background:rgba(255,255,255,.92);border-top:1px sol
 html[data-theme="light"] nav button.on .ic{filter:drop-shadow(0 0 6px rgba(13,138,63,.35))}
 html[data-theme="light"] .yrdy.we{background:#e0e5dd;color:#9aa898}
 html[data-theme="light"] .wlday.we{opacity:.45}
+html[data-theme="light"] header{background:linear-gradient(180deg,rgba(242,245,240,.97),rgba(242,245,240,.88))}
+html[data-theme="light"] .yrdy.none{background:#e3e9e1;color:#5b6f5c}  /* nur leere Tage -- ein allgemeines .yrdy würde die Kategorie-Farben überstimmen */
+html[data-theme="light"] .yrdy.d-pos2{color:#fff}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.45;overscroll-behavior-y:none}
 body{
@@ -131,16 +134,10 @@ button.ghost{background:transparent;border:1px solid var(--line2);color:var(--mu
 .day .diff{font-family:var(--mono);font-size:15px;font-weight:700}
 .day .ist{font-family:var(--mono);font-size:10.5px;color:var(--mut)}
 .dayacts{display:flex;gap:6px;margin-left:4px}
-.iconbtn{width:30px;height:30px;border-radius:8px;background:var(--bg2);border:1px solid var(--line);color:var(--mut);font-size:13px;cursor:pointer;display:grid;place-items:center;flex:0 0 auto}
+.iconbtn{width:36px;height:36px;border-radius:8px;background:var(--bg2);border:1px solid var(--line);color:var(--mut);font-size:13px;cursor:pointer;display:grid;place-items:center;flex:0 0 auto}
 .iconbtn:active{background:var(--panel2)}
 .empty{text-align:center;color:var(--mut2);padding:40px 20px;font-size:13.5px;font-family:var(--mono)}
 .empty .big{font-size:30px;margin-bottom:10px;opacity:.5}
-/* Overtime list */
-.otrow{display:flex;align-items:center;gap:12px;padding:11px 13px;border-bottom:1px solid var(--line)}
-.otrow:last-child{border-bottom:0}
-.otrow .od{font-family:var(--mono);font-size:13.5px;color:var(--ink)}
-.otrow .ow{font-size:11px;color:var(--mut)}
-.otrow .ov{margin-left:auto;font-family:var(--mono);font-size:16px;font-weight:700}
 /* Wochen-Aufschlüsselung */
 .otweek{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden}
 .otwh{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--panel2);border-bottom:1px solid var(--line);gap:10px}
@@ -171,7 +168,6 @@ button.ghost{background:transparent;border:1px solid var(--line2);color:var(--mu
 .logover summary::before{content:'▸';display:inline-block;transition:transform .15s;font-size:9px;color:var(--mut2)}
 .logover[open] summary::before{transform:rotate(90deg)}
 .logover[open] summary{color:var(--ink);margin-bottom:4px}
-.logoverh{color:var(--mut2);margin-bottom:3px}
 .logoverline{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:6px;align-items:center;padding:2px 0;color:var(--mut)}
 .logoverline .lo-prev{color:var(--mut2);text-decoration:line-through}
 .logoverline .lo-arr{color:var(--neon-dim)}
@@ -215,7 +211,6 @@ button.ghost{background:transparent;border:1px solid var(--line2);color:var(--mu
 .urlsub{font-family:var(--mono);font-size:11px;color:var(--mut)}
 .absrow.sub{font-size:12px;color:var(--mut2);padding:3px 2px 3px 16px;border-bottom:0}
 .absrow .av{font-family:var(--mono);font-weight:700}
-.absrow .amut{color:var(--mut);font-weight:400;font-size:12px}
 /* Export preview */
 .pvmonth{font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--neon-soft);margin:14px 2px 6px;text-transform:uppercase}
 .pvrow{display:flex;gap:10px;font-family:var(--mono);font-size:13px;padding:7px 10px;border-bottom:1px solid var(--line);color:var(--mut)}
@@ -224,7 +219,6 @@ button.ghost{background:transparent;border:1px solid var(--line2);color:var(--mu
 .filebtn{display:block;text-align:center;border:1.5px dashed var(--line2);background:var(--bg2);border-radius:12px;padding:18px;font-family:var(--mono);font-size:13px;color:var(--mut);cursor:pointer;letter-spacing:.5px}
 .filebtn.has{border-style:solid;border-color:var(--neon-dim);color:var(--neon-soft)}
 input[type=file]{display:none}
-.cal{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:10px 9px 8px;margin-bottom:14px}
 .calhd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .calnav{flex:0 0 auto;background:transparent;border:1px solid var(--line2);border-radius:8px;color:var(--neon-soft);width:34px;height:34px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--mono);line-height:1}
 .calnav:active{background:var(--bg)}
@@ -258,7 +252,7 @@ input[type=file]{display:none}
 .mcard.pos::before{background:var(--neon)}
 .mcard.neg::before{background:#ff6b6b}
 .mcard.zero::before{background:var(--mut2)}
-.mcard.empty{opacity:.45}
+.mcard.nodata{opacity:.45}
 .mcm{font-size:11px;color:var(--neon-soft);letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px;font-weight:700}
 .mcn{font-size:9.5px;color:var(--mut);margin-bottom:5px}
 .mcd{font-size:13.5px;font-weight:700;font-family:var(--mono);line-height:1}
@@ -280,7 +274,7 @@ input[type=file]{display:none}
 .yrdy.ausgl{background:#c084fc;color:#fff}
 .yrdy.we{background:#0e130e;color:#566753}
 .yrdy.hol{background:rgba(255,90,90,.18);color:#ff9a9a}
-.yrdy.empty{background:#1a221a;color:#9eaf9d}
+.yrdy.none{background:#1a221a;color:#9eaf9d}  /* nicht .empty -- das ist der Leer-Zustand mit 40px Padding */
 .yrdy.other{background:transparent;color:transparent;pointer-events:none}
 .yrdy.today{border-color:var(--neon);box-shadow:0 0 0 1px var(--neon) inset}
 .yrlegend{display:flex;flex-wrap:wrap;gap:8px;font-family:var(--mono);font-size:10px;color:var(--mut);padding:8px 2px 0;border-top:1px solid var(--line);margin-top:6px}
@@ -298,10 +292,6 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .statline.ok{border-color:var(--neon-dim);color:var(--neon-soft)}
 .statline.warn{border-color:#5a4a1f;color:var(--amber)}
 .statline.warn b{color:var(--amber)}
-/* Backup section */
-.bkpsec{border-top:1px solid var(--line);margin-top:20px;padding-top:16px}
-.bkphdr{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--neon-soft);margin-bottom:8px;font-weight:700}
-.bkpnote{font-size:12.5px;color:var(--mut);margin-bottom:12px;line-height:1.5}
 /* Heute-Karte */
 .todayhdr{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
 .todaylbl{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;color:var(--neon);font-weight:700}
@@ -385,7 +375,6 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .plday.unsure .pld-c{color:var(--amber)}
 .plday.hasentry{opacity:.45}
 .plday.oob{opacity:.2;pointer-events:none}
-.plphoto{margin-top:2px}
 .plstatus{font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:8px;text-align:center;line-height:1.5}
 .plstatus.err{color:#ff6b6b}
 /* Plan-Ring im Eingabe-Kalender */
@@ -500,7 +489,8 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .todayquick{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
 .qsh{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 6px;color:var(--ink);font-family:var(--mono);font-size:12.5px;cursor:pointer;text-align:center;font-weight:700;letter-spacing:.5px;transition:transform .1s,background .15s}
 .qsh:active{transform:scale(.95);background:var(--neon);color:var(--bg);border-color:var(--neon)}
-.qshtm{font-size:9.5px;color:var(--mut);font-weight:400;margin-top:3px;letter-spacing:0}
+.qshtm{font-size:9.5px;color:var(--mut);font-weight:400;margin-top:3px;letter-spacing:0;white-space:pre-line}
+.shiftbtn .shtm{white-space:pre-line}
 .qsh:active .qshtm{color:var(--bg);opacity:.85}
 /* Compact Quick-Shift Buttons (Tag-Eingabe) */
 .qshifts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:0 0 14px}
@@ -565,7 +555,6 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .sparkarea.neg{fill:#ff6b6b}
 .sparkline{stroke:var(--neon);stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round;fill:none}
 .sparkdot{fill:var(--neon);stroke:var(--bg);stroke-width:1.2}
-.sparklabel{font-family:var(--mono);font-size:8px;fill:var(--mut)}
 .forfeit-note{margin-top:10px;padding:8px 11px;border-radius:8px;font-family:var(--mono);font-size:11px;line-height:1.45;letter-spacing:.3px;display:flex;align-items:flex-start;gap:8px}
 .forfeit-note.expiring{background:rgba(255,194,77,.08);border:1px solid rgba(255,194,77,.25);color:var(--amber)}
 .forfeit-note.kept{background:rgba(61,255,119,.07);border:1px solid rgba(61,255,119,.25);color:var(--neon-soft)}
@@ -695,7 +684,7 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
         <button type="button" class="qsh" data-sh="tag"><div>TAG</div><div class="qshtm">06:30–15:00</div></button>
         <button type="button" class="qsh" data-sh="spaet"><div>SPÄT</div><div class="qshtm">13:30–22:00<br>Fr 11:30–20:00</div></button>
       </div>
-      <div class="hint" style="margin:-6px 0 12px">Schicht direkt eintragen · Fr-Spät 11:30–20:00 · WE/Feiertage skip</div>
+      <div class="hint" id="rShiftHint" style="margin:-6px 0 12px">Schicht direkt eintragen · WE/Feiertage skip</div>
       <div class="qsep">oder manuell</div>
       <div class="field"><label class="fl">Art</label><select id="rCat"></select></div>
       <div class="row2" id="rTimes">
@@ -1191,7 +1180,11 @@ function persist(){
 let bfState=null;  /* Nachtrag-Wizard State — früh deklariert wegen persist-Hook */
 let booted=false;  /* persist() darf den Banner erst rendern wenn HOLIDAYS & Co. initialisiert sind (seedTemplate läuft davor) */
 DB.log=DB.log||[];
-function logEvent(ev){ev.ts=Date.now();DB.log.unshift(ev);if(DB.log.length>500)DB.log.length=500;}
+const UNDO_KEEP=30;  /* nur die neuesten Bulk-Einträge behalten ihre Undo-Daten -- hält localStorage und die Sync-Datei klein */
+function logEvent(ev){
+  ev.ts=Date.now();DB.log.unshift(ev);if(DB.log.length>500)DB.log.length=500;
+  let nb=0;for(const e of DB.log){if(e.type==='bulk'&&e.applied&&++nb>UNDO_KEEP)delete e.applied;}
+}
 /* Einzel-Eintrag schreiben/löschen: Verlauf mit Vorwert, "geprüft"-Status zurücksetzen.
    persist() + Re-Render macht der Aufrufer (Bulk-Pfade loggen selbst als 'bulk'). */
 function setEntry(k,e){
@@ -1266,6 +1259,19 @@ function shiftTimes(id,dow){
   return {k:t[0],g:t[1],label:s.label};
 }
 function shiftTxt(id,dow){const t=shiftTimes(id,dow);return t?`${t.k}–${t.g}`:'';}
+function fillShiftLabels(){
+  /* Zeiten an den statischen Schicht-Buttons aus SHIFTS setzen (HTML enthält nur Platzhalter).
+     Tagesabhängige Spät-Zeit im Tag-Formular/Nachtrag setzen danach updateSpaetLabel / bfShowCurrent. */
+  const both=(id,sep)=>{const a=shiftTxt(id,1),f=shiftTxt(id,5);return a===f?a:`${a}${sep}Fr ${f}`;};
+  document.querySelectorAll('#sQuickShifts .qsh').forEach(b=>b.querySelector('.qshtm').textContent=shiftTxt(b.dataset.sh,1));
+  document.querySelectorAll('#rQuickShifts .qsh').forEach(b=>b.querySelector('.qshtm').textContent=both(b.dataset.sh,'\n'));
+  document.querySelectorAll('#shiftCard .shiftbtn').forEach(b=>{
+    const a=shiftTxt(b.dataset.sh,1),f=shiftTxt(b.dataset.sh,5);
+    b.querySelector('.shtm').textContent=a===f?`Mo–Fr · ${a}`:`Mo–Do · ${a}\nFr · ${f}`;
+  });
+  document.querySelectorAll('#bfModal .bfopt').forEach(b=>{const m=b.querySelector('.bfoptm');if(m&&shiftTimes(b.dataset.bf,1))m.textContent=shiftTxt(b.dataset.bf,1);});
+  const h=document.getElementById('rShiftHint');if(h)h.textContent=`Schicht direkt eintragen · Fr-Spät ${shiftTxt('spaet',5)} · WE/Feiertage skip`;
+}
 // Kategorie-Optionen (Wert = exakter String fürs Excel Dropdown Spalte B)
 const CATS=[
   {v:"Arbeit",l:"Arbeit (Standard)",times:true,write:null},
@@ -2534,7 +2540,7 @@ function renderMonthCards(){
   for(let m=0;m<12;m++){
     const keys=monthEntries(m);
     let diff=0;keys.forEach(k=>{const r=compute(k,DB.entries[k]);if(r.diff!=null)diff+=r.diff;});
-    const cls=keys.length?(diff>0?'pos':diff<0?'neg':'zero'):'empty';
+    const cls=keys.length?(diff>0?'pos':diff<0?'neg':'zero'):'nodata';
     const dcls=diff>0?'pos':diff<0?'neg':'zero';
     const active=m===curMonth?'active':'';
     const dispDiff=keys.length?sgn(diff):'—';
@@ -2576,7 +2582,7 @@ function renderYearCal(){
         if(r.diff==null||r.diff===0){
           if(isHol||isHalf)cls+=' hol';
           else if(isWE)cls+=' we';
-          else cls+=' empty';
+          else cls+=' none';
         }else{
           const absH=Math.abs(r.diff)/60;
           if(r.diff>0){if(absH>=2)cls+=' d-pos2';else cls+=' d-pos1';}
@@ -2593,7 +2599,7 @@ function renderYearCal(){
           else cls+=' work';
         } else if(isHol||isHalf)cls+=' hol';
         else if(isWE)cls+=' we';
-        else cls+=' empty';
+        else cls+=' none';
       }
       if(k===todayK)cls+=' today';
       if(entry&&entry.note)cls+=' hasnote';
@@ -4308,6 +4314,7 @@ function handleShortcut(){
 /* boot */
 if(!Store.ok)document.getElementById('storageWarn').style.display='block';
 updateSaveSub(false);
+fillShiftLabels();updateSpaetLabel();
 booted=true;
 renderDbxUi();
 /* Kurzbefehle erst nach dem ersten Abgleich: sonst könnte "laut Plan" einen Eintrag vom anderen Gerät überschreiben */
