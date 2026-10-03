@@ -1142,6 +1142,8 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
 "use strict";
 /* pad muss früh definiert sein - wird in persist/updateSaveSub via seedTemplate aufgerufen */
 const pad=n=>String(n).padStart(2,'0');
+/* Für alles, was aus Daten (Notizen, Import-Zeilen, Verlauf, Fehlermeldungen) in innerHTML oder ein Attribut geht */
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 /* ---------- storage ---------- */
 const KEY="ak_zeit_v1";
 const Store={mem:null,ok:true,
@@ -1190,6 +1192,18 @@ let bfState=null;  /* Nachtrag-Wizard State — früh deklariert wegen persist-H
 let booted=false;  /* persist() darf den Banner erst rendern wenn HOLIDAYS & Co. initialisiert sind (seedTemplate läuft davor) */
 DB.log=DB.log||[];
 function logEvent(ev){ev.ts=Date.now();DB.log.unshift(ev);if(DB.log.length>500)DB.log.length=500;}
+/* Einzel-Eintrag schreiben/löschen: Verlauf mit Vorwert, "geprüft"-Status zurücksetzen.
+   persist() + Re-Render macht der Aufrufer (Bulk-Pfade loggen selbst als 'bulk'). */
+function setEntry(k,e){
+  const prev=DB.entries[k];DB.entries[k]=e;delete DB.flagsReviewed[k];
+  logEvent({type:prev?'update':'create',k,val:e,prev});
+}
+function deleteEntry(k){
+  const prev=DB.entries[k];if(!prev)return null;
+  delete DB.entries[k];delete DB.flagsReviewed[k];
+  logEvent({type:'delete',k,prev});
+  return prev;
+}
 /* einmaliges Übernehmen der Vorbelegungen aus der Vorlage: Heiligabend & Silvester = Ausgleichszeit */
 (function seedTemplate(){
   if(DB.settings.seeded) return;
@@ -1245,6 +1259,13 @@ const SHIFTS=[
   {id:'tag',  label:'Tagschicht', mo_do:['06:30','15:00'],fr:['06:30','15:00']},
   {id:'spaet',label:'Spätschicht',mo_do:['13:30','22:00'],fr:['11:30','20:00']}
 ];
+function shiftTimes(id,dow){
+  /* Kommen/Gehen einer Schicht am Wochentag dow (Spät am Freitag abweichend). Schichtzeiten NUR hier über SHIFTS ändern. */
+  const s=SHIFTS.find(x=>x.id===id);if(!s)return null;
+  const t=dow===5?s.fr:s.mo_do;
+  return {k:t[0],g:t[1],label:s.label};
+}
+function shiftTxt(id,dow){const t=shiftTimes(id,dow);return t?`${t.k}–${t.g}`:'';}
 // Kategorie-Optionen (Wert = exakter String fürs Excel Dropdown Spalte B)
 const CATS=[
   {v:"Arbeit",l:"Arbeit (Standard)",times:true,write:null},
@@ -1257,6 +1278,7 @@ const CATS=[
   {v:"Kompensationstag Grp2",l:"Kompensationstag Grp2",times:false,write:"Kompensationstag Grp2"}
 ];
 const catDef=v=>CATS.find(c=>c.v===v)||CATS[0];
+const catShort=v=>catDef(v).l.replace(' (ganzer Tag)','').replace(' (Standard)','');  /* Anzeigename ohne Zusatz */
 
 /* ---------- time helpers ---------- */
 function hToMin(s){if(!s)return null;const[a,b]=s.split(':');return (+a)*60+(+b);}
@@ -1283,6 +1305,9 @@ function proposeCarry(y){
 function isoWeek(d){const t=new Date(d.getFullYear(),d.getMonth(),d.getDate());const dn=(t.getDay()+6)%7;t.setDate(t.getDate()-dn+3);const f=new Date(t.getFullYear(),0,4);return 1+Math.round(((t-f)/86400000-3+((f.getDay()+6)%7))/7);}
 function isoWeeksInYear(y){const j=new Date(y,0,1).getDay();const d=new Date(y,11,31).getDay();return (j===4||d===4)?53:52;}
 function isoWeekMonday(y,w){const j4=new Date(y,0,4);const dn=j4.getDay()||7;const m=new Date(j4);m.setDate(j4.getDate()-dn+1);m.setDate(m.getDate()+(w-1)*7);return m;}
+/* Montag der Woche von d. Für "Woche dieses Datums" immer DIESE Funktion nehmen:
+   isoWeekMonday(Kalenderjahr, isoWeek(d)) ist am Jahreswechsel falsch (1.1.2027 liegt in KW 53/2026). */
+function mondayOf(d){const m=new Date(d.getFullYear(),d.getMonth(),d.getDate(),12);m.setDate(m.getDate()-(m.getDay()+6)%7);return m;}
 
 /* ---------- engine (mirrors the employer sheet) ---------- */
 function dayTarget(){return Math.round((DB.settings.weekHours*60)/DB.settings.workDays);}
@@ -1309,10 +1334,9 @@ function breakMin(gross,isWeekend,override){
   const U=(S>M15&&S<M15+N15)?S-M15:(S>M15?N15:N18);
   const V=T+U; const W=V>N16?N16:V; const X=S<M16?U:N18;
   return S>=M16?W:X;}
-function weekIstMin(year,weekNum,overrides){
-  /* Summe Arbeit-Ist für ISO-Woche. overrides = {key: entry|null} überschreibt DB.entries lokal */
+function weekIstMin(mon,overrides){
+  /* Summe Arbeit-Ist der Woche ab Montag mon. overrides = {key: entry|null} überschreibt DB.entries lokal */
   overrides=overrides||{};
-  const mon=isoWeekMonday(year,weekNum);
   let total=0;
   for(let i=0;i<7;i++){
     const d=new Date(mon);d.setDate(mon.getDate()+i);
@@ -1329,15 +1353,15 @@ function check48h(overrides){
   if(limit<=0)return[];  /* 0 = aus */
   const byWeek={};
   Object.keys(overrides).forEach(k=>{
-    const d=keyDate(k);const y=d.getFullYear();const wk=isoWeek(d);
-    const key=`${y}-${wk}`;
-    if(!byWeek[key])byWeek[key]={y,wk,ov:{}};
+    const mon=mondayOf(keyDate(k));const key=dateKey(mon);
+    if(!byWeek[key])byWeek[key]={mon,ov:{}};
     byWeek[key].ov[k]=overrides[k];
   });
   const violations=[];
-  Object.values(byWeek).forEach(({y,wk,ov})=>{
-    const min=weekIstMin(y,wk,ov);
-    if(min>limit)violations.push({y,wk,min});
+  Object.values(byWeek).forEach(({mon,ov})=>{
+    const min=weekIstMin(mon,ov);
+    const thu=new Date(mon);thu.setDate(mon.getDate()+3);  /* ISO-Jahr = Jahr des Donnerstags */
+    if(min>limit)violations.push({y:thu.getFullYear(),wk:isoWeek(mon),min});
   });
   return violations;
 }
@@ -1547,7 +1571,7 @@ function updateSpaetLabel(){
   const k=document.getElementById('sDate').value;if(!k)return;
   const lbl=document.getElementById('sSpaetTm');if(!lbl)return;
   const dow=keyDate(k).getDay();
-  lbl.textContent=dow===5?'11:30–20:00':'13:30–22:00';
+  lbl.textContent=shiftTxt('spaet',dow);
 }
 const sCat=document.getElementById('sCat'),sTimes=document.getElementById('sTimes');
 const rCat=document.getElementById('rCat'),rTimes=document.getElementById('rTimes');
@@ -1557,15 +1581,11 @@ rCat.onchange=()=>toggleTimes(rCat,rTimes);
 document.querySelectorAll('#sQuickShifts .qsh').forEach(b=>b.onclick=()=>{
   const k=document.getElementById('sDate').value;
   const dow=k?keyDate(k).getDay():1;
-  const sh=b.dataset.sh;
-  let kk,gg;
-  if(sh==='frueh'){kk='06:00';gg='14:30';}
-  else if(sh==='tag'){kk='06:30';gg='15:00';}
-  else{if(dow===5){kk='11:30';gg='20:00';}else{kk='13:30';gg='22:00';}}
+  const t=shiftTimes(b.dataset.sh,dow);
   /* Falls Kategorie nicht Arbeit ist, wechseln */
   if(sCat.value!=='Arbeit'){sCat.value='Arbeit';toggleTimes(sCat,sTimes);}
-  document.getElementById('sK').value=kk;
-  document.getElementById('sG').value=gg;
+  document.getElementById('sK').value=t.k;
+  document.getElementById('sG').value=t.g;
   liveSingle();
 });
 
@@ -1606,15 +1626,9 @@ function adaptShiftTimes(entry,targetDow){
   /* Passt erkannte Schicht-Zeiten an den Ziel-Wochentag an (Spät: Fr abweichend).
      Custom-Zeiten (andere) werden 1:1 kopiert. Gibt {k,g,adapted,label} zurück. */
   const sh=classifyArbeit(entry);
-  if(sh==='frueh')return {k:'06:00',g:'14:30',adapted:false,label:'Frühschicht'};
-  if(sh==='tag')return {k:'06:30',g:'15:00',adapted:false,label:'Tagschicht'};
-  if(sh==='spaet'){
-    const k=targetDow===5?'11:30':'13:30';
-    const g=targetDow===5?'20:00':'22:00';
-    const adapted=(k!==entry.k||g!==entry.g);
-    return {k,g,adapted,label:'Spätschicht'};
-  }
-  return {k:entry.k,g:entry.g,adapted:false,label:null};
+  if(sh==='andere')return {k:entry.k,g:entry.g,adapted:false,label:null};
+  const t=shiftTimes(sh,targetDow);
+  return {k:t.k,g:t.g,adapted:(t.k!==entry.k||t.g!==entry.g),label:t.label};
 }
 function renderPrefill(){
   const k=document.getElementById('sDate').value;
@@ -1652,10 +1666,9 @@ document.getElementById('pfApply').onclick=()=>{
   document.getElementById('sG').value=gg;
   toggleTimes(sCat,sTimes);
   /* Direkt speichern */
-  DB.entries[k]=val;
-  logEvent({type:'create',k,val});
+  setEntry(k,val);
   persist();
-  calTag&&calTag.refresh();calRange&&calRange.refresh();
+  refreshCals();
   loadSingle();liveSingle();
   box.style.display='none';
   toast(`✓ Übernommen: ${kk}–${gg}`);
@@ -1706,21 +1719,17 @@ document.getElementById('sSave').onclick=()=>{
   const pVal=document.getElementById('sPause').value;
   if(pVal!==''&&cd.times){const pNum=parseInt(pVal);if(!isNaN(pNum)&&pNum>=0)e.pauseOverride=pNum;}
   if(sCat.value==='Arbeit'&&!confirm48h({[k]:e}))return;
-  const prev=DB.entries[k];
-  DB.entries[k]=e;
-  delete DB.flagsReviewed[k];  /* Bearbeitung hebt "geprüft"-Status auf -- wird bei Bedarf neu geflaggt */
-  logEvent({type:prev?'update':'create',k,val:e,prev});
+  setEntry(k,e);  /* hebt auch den "geprüft"-Status auf -- wird bei Bedarf neu geflaggt */
   persist();toast('✓ '+WD[keyDate(k).getDay()]+'. '+keyDate(k).toLocaleDateString('de-DE')+' gespeichert');
   loadSingle();liveSingle();
-  calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+  refreshCals();
   renderFlagCatch&&renderFlagCatch();
 };
 document.getElementById('sDel').onclick=()=>{
   const k=document.getElementById('sDate').value;
-  const prev=DB.entries[k];delete DB.entries[k];
-  if(prev)logEvent({type:'delete',k,prev});
+  deleteEntry(k);
   persist();toast('Eintrag gelöscht');loadSingle();liveSingle();
-  calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+  refreshCals();
 };
 
 /* save range */
@@ -1781,7 +1790,7 @@ function applyShift(week,shiftId){
   }
   logEvent({type:'settings',detail:`KW-Plan ${pad(week)}: ${sh.label} (${n} Tage)`});
   persist();
-  calTag&&calTag.refresh();calRange&&calRange.refresh();
+  refreshCals();
   renderTodayCard();renderPlanCatch&&renderPlanCatch();
   toast(`✓ KW ${pad(week)} als ${sh.label} geplant · ${n} Tage${sk?` · ${sk} übersprungen`:''}`);
 }
@@ -1825,7 +1834,7 @@ function requestFill(targets,skipped,label){
     targets.forEach(t=>{applied.push({k:t.k,prev:null,next:t.entry});DB.entries[t.k]=t.entry;});
     logEvent({type:'bulk',label,n:targets.length,kept:0,skipped,applied});
     persist();
-    calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+    refreshCals();
     toast(`✓ ${label}: ${targets.length} Tag${targets.length===1?'':'e'}${skipped?` · ${skipped} übersprungen`:''}`);
     return;
   }
@@ -1839,7 +1848,7 @@ function renderOwList(){
   const {existing,over}=pendingFill;
   document.getElementById('owList').innerHTML=existing.map(t=>{
     const d=keyDate(t.k);const e=DB.entries[t.k];const r=compute(t.k,e);
-    const val=(e.k&&e.g)?`${e.k}–${e.g}`:catDef(e.cat).l.replace(' (ganzer Tag)','').replace(' (Standard)','');
+    const val=(e.k&&e.g)?`${e.k}–${e.g}`:catShort(e.cat);
     const diffTxt=(r.diff!=null&&r.diff!==0)?` ${sgn(r.diff)}`:'';
     const isOver=over.has(t.k);
     return `<button type="button" class="owrow ${isOver?'over':'keep'}" data-k="${t.k}"><span class="owd">${WD[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}.</span><span class="owv">${val}${diffTxt}</span><span class="owtag">${isOver?'überschreiben':'behalten'}</span></button>`;
@@ -1858,12 +1867,12 @@ function applyFill(){
     const prev=DB.entries[t.k];
     if(prev&&!over.has(t.k)){kept++;return;}
     applied.push({k:t.k,prev:prev||null,next:t.entry});
-    DB.entries[t.k]=t.entry;n++;
+    DB.entries[t.k]=t.entry;delete DB.flagsReviewed[t.k];n++;
   });
   const overwrites=applied.filter(a=>a.prev);
   logEvent({type:'bulk',label,n,kept,skipped,over:overwrites,applied});
   persist();
-  calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+  refreshCals();
   document.getElementById('owModal').classList.remove('on');pendingFill=null;
   toast(`✓ ${label}: ${n} eingetragen${kept?` · ${kept} behalten`:''}${skipped?` · ${skipped} übersprungen`:''}`);
 }
@@ -1890,10 +1899,8 @@ function applyForfeit(diff,threshold){
 function classifyArbeit(e){
   /* Klassifiziert Arbeit-Einträge nach Schicht basierend auf Kommen-Zeit */
   if(!e||e.cat!=='Arbeit'||!e.k)return 'andere';
-  if(e.k==='06:00')return 'frueh';
-  if(e.k==='06:30')return 'tag';
-  if(e.k==='13:30'||e.k==='11:30')return 'spaet';
-  return 'andere';
+  const s=SHIFTS.find(x=>x.mo_do[0]===e.k||x.fr[0]===e.k);
+  return s?s.id:'andere';
 }
 /* ---------- Schichtplan-Helpers ---------- */
 const PLAN_CODES=['F','S','T','SP','Ur'];
@@ -1902,9 +1909,8 @@ function planLabel(code){
 }
 function planToEntry(code,dow){
   /* Wandelt Plan-Code in konkreten Eintrag um (Spät: Fr-Sonderzeit) */
-  if(code==='F'||code==='SP')return {cat:'Arbeit',k:'06:00',g:'14:30'};
-  if(code==='T')return {cat:'Arbeit',k:'06:30',g:'15:00'};
-  if(code==='S')return dow===5?{cat:'Arbeit',k:'11:30',g:'20:00'}:{cat:'Arbeit',k:'13:30',g:'22:00'};
+  const sh={F:'frueh',SP:'frueh',T:'tag',S:'spaet'}[code];
+  if(sh){const t=shiftTimes(sh,dow);return {cat:'Arbeit',k:t.k,g:t.g};}
   if(code==='Ur')return {cat:'Urlaub'};
   return null;
 }
@@ -2089,20 +2095,13 @@ function renderDash(){
     html+='</div>';
   });
   wrap.innerHTML=html;
-  wrap.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{
-    document.querySelector('#modeSeg button[data-mode="single"]').click();
-    document.querySelector('nav button[data-view="v-input"]').click();
-    calTag&&calTag.setSelection(b.dataset.edit);
-    document.getElementById('sDate').value=b.dataset.edit;loadSingle();liveSingle();
-    window.scrollTo({top:0,behavior:'smooth'});
-  });
+  wrap.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openDay(b.dataset.edit));
   wrap.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
     const k=b.dataset.del;const prev=DB.entries[k];if(!prev)return;
     const d=keyDate(k);
     if(!confirm(`${WD[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}. löschen?\n${fmtEntry(prev)}`))return;
-    delete DB.entries[k];
-    logEvent({type:'delete',k,prev});
-    persist();renderDash();calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();toast('Eintrag gelöscht');
+    deleteEntry(k);
+    persist();renderDash();refreshCals();toast('Eintrag gelöscht');
   });
 }
 function renderSparkline(){
@@ -2216,14 +2215,12 @@ function punchOut(){
     return;
   }
   const e={cat:'Arbeit',k:DB.pending.kommen,g:gehen};
-  const prev=DB.entries[k];
-  DB.entries[k]=e;
+  setEntry(k,e);
   DB.pending=null;
-  logEvent({type:prev?'update':'create',k,val:e,prev});
   persist();
   stopTicker();
   renderDash();renderTodayCard();renderWeekLive();
-  calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+  refreshCals();
   const r=compute(k,e);
   toast(`■ Ausgestempelt · ${e.k}–${e.g} · Ist ${r.ist!=null?minToH(r.ist):'—'}`);
 }
@@ -2241,9 +2238,8 @@ function resolveForgotten(save){
     const gEl=document.getElementById('fgGehen');
     const gehen=gEl?gEl.value:'';
     if(!gehen){toast('Gehen-Zeit angeben');return;}
-    const e={cat:'Arbeit',k:p.kommen,g:gehen};
-    DB.entries[p.k]=e;
-    logEvent({type:'create',k:p.k,val:e});
+    if(gehen===p.kommen){toast('Kommen und Gehen sind gleich');return;}
+    setEntry(p.k,{cat:'Arbeit',k:p.kommen,g:gehen});
     toast(`✓ ${p.k.slice(8)}.${p.k.slice(5,7)}. nachgetragen: ${p.kommen}–${gehen}`);
   }else{
     toast('Einstempelung verworfen');
@@ -2251,7 +2247,16 @@ function resolveForgotten(save){
   DB.pending=null;
   persist();
   renderDash();renderTodayCard();renderWeekLive();
-  calTag&&calTag.refresh();
+  refreshCals();
+}
+function refreshCals(){[calTag,calRange,calShift].forEach(c=>c&&c.refresh());}
+function openDay(k){
+  /* Tag k im Tag-Formular öffnen (aus Übersicht, Heatmap, Prüfliste, Wochenleiste, Heute-Karte) */
+  document.querySelector('nav button[data-view="v-input"]').click();
+  document.querySelector('#modeSeg button[data-mode="single"]').click();
+  calTag&&calTag.setSelection(k);
+  document.getElementById('sDate').value=k;loadSingle();liveSingle();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 function stopTicker(){if(punchTicker){clearInterval(punchTicker);punchTicker=null;}}
 function startTicker(){
@@ -2272,12 +2277,12 @@ function elapsedTxt(){
 }
 function guessShift(kommen){
   /* Matcht Kommen-Zeit auf Schicht ±20min für Gehen-Vorschlag */
-  const [h,m]=kommen.split(':').map(Number);const t=h*60+m;
-  const near=(hh,mm)=>Math.abs(t-(hh*60+mm))<=20;
-  if(near(6,0))return {label:'Frühschicht',g:'14:30'};
-  if(near(6,30))return {label:'Tagschicht',g:'15:00'};
-  if(near(13,30))return {label:'Spätschicht',g:'22:00'};
-  if(near(11,30))return {label:'Spätschicht (Fr)',g:'20:00'};
+  const t=hToMin(kommen);
+  const near=hm=>Math.abs(t-hToMin(hm))<=20;
+  for(const s of SHIFTS){
+    if(near(s.mo_do[0]))return {label:s.label,g:s.mo_do[1]};
+    if(s.fr[0]!==s.mo_do[0]&&near(s.fr[0]))return {label:s.label+' (Fr)',g:s.fr[1]};
+  }
   return null;
 }
 function renderTodayCard(){
@@ -2338,7 +2343,7 @@ function renderTodayCard(){
     body.innerHTML=`<div class="todaysum">${line}</div><button class="act ghost" data-go="edit">Bearbeiten</button>`;
   } else {
     const planCode=DB.plan[k];
-    const spaetTxt=dow===5?'11:30–20:00':'13:30–22:00';
+    const spaetTxt=shiftTxt('spaet',dow);
     if(planCode){
       /* Plan-Abfrage: Laut Plan X → Übernehmen / Stempeln / Anders */
       const pTimes=planTimesTxt(planCode,dow);
@@ -2354,31 +2359,25 @@ function renderTodayCard(){
         const e=planToEntry(planCode,dow);
         if(!e)return;
         if(e.cat==='Arbeit'&&!confirm48h({[k]:e}))return;
-        DB.entries[k]=e;
-        logEvent({type:'create',k,val:e});
+        setEntry(k,e);
         persist();
         renderDash();renderTodayCard();renderWeekLive();
-        calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+        refreshCals();
         toast(`✓ ${planLabel(planCode)} eingetragen`);
       };
       document.getElementById('btnPlanPunch').onclick=punchIn;
       document.getElementById('btnPlanEdit').onclick=()=>{
         const e=planToEntry(planCode,dow);
-        document.querySelector('#modeSeg button[data-mode="single"]').click();
-        document.querySelector('nav button[data-view="v-input"]').click();
-        calTag&&calTag.setSelection(k);
-        document.getElementById('sDate').value=k;loadSingle();
+        openDay(k);
         /* Plan-Zeiten vorbefüllen als Startpunkt */
-        if(e&&e.cat==='Arbeit'){sCat.value='Arbeit';document.getElementById('sK').value=e.k;document.getElementById('sG').value=e.g;toggleTimes(sCat,sTimes);}
-        liveSingle();
-        window.scrollTo({top:0,behavior:'smooth'});
+        if(e&&e.cat==='Arbeit'){sCat.value='Arbeit';document.getElementById('sK').value=e.k;document.getElementById('sG').value=e.g;toggleTimes(sCat,sTimes);liveSingle();}
       };
       return;
     }
     const shiftsHtml=(isWE||isHol)?'':`<div class="punchor">oder Schicht direkt eintragen:</div>
     <div class="todayquick">
-      <button type="button" class="qsh" data-sh="frueh"><div>FRÜH</div><div class="qshtm">06:00–14:30</div></button>
-      <button type="button" class="qsh" data-sh="tag"><div>TAG</div><div class="qshtm">06:30–15:00</div></button>
+      <button type="button" class="qsh" data-sh="frueh"><div>FRÜH</div><div class="qshtm">${shiftTxt('frueh',dow)}</div></button>
+      <button type="button" class="qsh" data-sh="tag"><div>TAG</div><div class="qshtm">${shiftTxt('tag',dow)}</div></button>
       <button type="button" class="qsh" data-sh="spaet"><div>SPÄT</div><div class="qshtm">${spaetTxt}</div></button>
     </div>
     <div class="todayalt">
@@ -2392,13 +2391,7 @@ function renderTodayCard(){
     body.querySelectorAll('.qsh').forEach(b=>b.onclick=()=>quickShift(b.dataset.sh,k));
     body.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>quickCat(b.dataset.cat,k));
   }
-  body.querySelectorAll('[data-go="edit"]').forEach(b=>b.onclick=()=>{
-    document.querySelector('#modeSeg button[data-mode="single"]').click();
-    document.querySelector('nav button[data-view="v-input"]').click();
-    calTag&&calTag.setSelection(k);
-    document.getElementById('sDate').value=k;loadSingle();liveSingle();
-    window.scrollTo({top:0,behavior:'smooth'});
-  });
+  body.querySelectorAll('[data-go="edit"]').forEach(b=>b.onclick=()=>openDay(k));
 }
 function findUnconfirmedPlanDays(){
   /* Vergangene Tage (max 14 zurück, ohne heute) mit Plan aber ohne Ist-Eintrag */
@@ -2423,14 +2416,7 @@ function renderPlanCatch(){
     return `<div class="pcday" data-k="${o.k}"><span>${WD[o.dow]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}.</span><span class="pcc">${o.code}</span></div>`;
   }).join('');
   /* Einzelner Tag antippbar → Tag-Eingabe */
-  document.querySelectorAll('#pcDays .pcday').forEach(el=>el.onclick=()=>{
-    const k=el.dataset.k;
-    document.querySelector('#modeSeg button[data-mode="single"]').click();
-    document.querySelector('nav button[data-view="v-input"]').click();
-    calTag&&calTag.setSelection(k);
-    document.getElementById('sDate').value=k;loadSingle();liveSingle();
-    window.scrollTo({top:0,behavior:'smooth'});
-  });
+  document.querySelectorAll('#pcDays .pcday').forEach(el=>el.onclick=()=>openDay(el.dataset.k));
   document.getElementById('pcApplyAll').onclick=()=>{
     const open2=findUnconfirmedPlanDays();
     if(!open2.length)return;
@@ -2444,7 +2430,7 @@ function renderPlanCatch(){
     /* 48h-Sammelcheck informativ */
     const v=check48h(ov);
     renderDash();renderTodayCard();renderWeekLive();
-    calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+    refreshCals();
     toast(v.length?`✓ ${n} laut Plan eingetragen · ⚠ ${v.length} Woche${v.length===1?'':'n'} über 48h`:`✓ ${n} Tag${n===1?'':'e'} laut Plan eingetragen`);
   };
 }
@@ -2458,7 +2444,7 @@ function renderFlagCatch(){
   list.innerHTML=flagged.map(f=>{
     const d=keyDate(f.k);
     const dtxt=`${WD[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`;
-    const vtxt=fmtEntry(f.e);
+    const vtxt=esc(fmtEntry(f.e));
     return `<div class="flitem" data-k="${f.k}">
       <div class="flrow" data-goto="${f.k}"><span class="fldate">${dtxt}</span><span class="flval">${vtxt}</span></div>
       <div class="fldet">${f.flags.join(' · ')}</div>
@@ -2474,15 +2460,8 @@ function renderFlagCatch(){
     renderFlagCatch();
     toast('✓ Als geprüft markiert');
   });
-  const goto=k=>{
-    document.querySelector('#modeSeg button[data-mode="single"]').click();
-    document.querySelector('nav button[data-view="v-input"]').click();
-    calTag&&calTag.setSelection(k);
-    document.getElementById('sDate').value=k;loadSingle();liveSingle();
-    window.scrollTo({top:0,behavior:'smooth'});
-  };
-  list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>goto(b.dataset.edit));
-  list.querySelectorAll('[data-goto]').forEach(el=>el.onclick=()=>goto(el.dataset.goto));
+  list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openDay(b.dataset.edit));
+  list.querySelectorAll('[data-goto]').forEach(el=>el.onclick=()=>openDay(el.dataset.goto));
 }
 function renderWeekLive(){
   const card=document.getElementById('weekLive');if(!card)return;
@@ -2490,7 +2469,7 @@ function renderWeekLive(){
   if(today.getFullYear()!==DB.settings.year){card.style.display='none';return;}
   card.style.display='block';
   const wk=isoWeek(today);
-  const mon=isoWeekMonday(today.getFullYear(),wk);
+  const mon=mondayOf(today);
   document.getElementById('wlKw').textContent=`KW ${pad(wk)}`;
   let ist=0,soll=0,diff=0;
   const todayK=dateKey(today);
@@ -2515,15 +2494,7 @@ function renderWeekLive(){
   document.getElementById('wlDays').innerHTML=daysHtml.join('');
   /* Klick-Handler: springt zu Tag-Eingabe */
   document.querySelectorAll('#wlDays .wlday.clk').forEach(el=>{
-    el.onclick=()=>{
-      const k=el.dataset.k;
-      document.querySelector('nav button[data-view="v-input"]').click();
-      document.querySelector('#modeSeg button[data-mode="single"]').click();
-      calTag&&calTag.setSelection(k);
-      document.getElementById('sDate').value=k;
-      loadSingle();liveSingle();
-      window.scrollTo({top:0,behavior:'smooth'});
-    };
+    el.onclick=()=>openDay(el.dataset.k);
   });
   document.getElementById('wlIst').textContent=minToH(ist);
   document.getElementById('wlSoll').textContent=minToH(Math.max(0,soll));
@@ -2541,28 +2512,21 @@ function renderWeekLive(){
   else note.innerHTML=`<span class="pos">Wochenziel erreicht · +${minToH(-remain)} darüber</span>`;
 }
 function quickShift(shift,k){
-  const dt=keyDate(k);const dow=dt.getDay();
-  let kk,gg,label;
-  if(shift==='frueh'){kk='06:00';gg='14:30';label='Frühschicht';}
-  else if(shift==='tag'){kk='06:30';gg='15:00';label='Tagschicht';}
-  else{label='Spätschicht';if(dow===5){kk='11:30';gg='20:00';}else{kk='13:30';gg='22:00';}}
-  const e={cat:'Arbeit',k:kk,g:gg};
+  const t=shiftTimes(shift,keyDate(k).getDay());
+  const e={cat:'Arbeit',k:t.k,g:t.g};
   if(!confirm48h({[k]:e}))return;
-  const prev=DB.entries[k];DB.entries[k]=e;
-  logEvent({type:prev?'update':'create',k,val:e,prev});
+  setEntry(k,e);
   persist();
-  toast(`✓ ${label} eingetragen`);
+  toast(`✓ ${t.label} eingetragen`);
   renderDash();
-  calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+  refreshCals();
 }
 function quickCat(cat,k){
-  const e={cat};
-  const prev=DB.entries[k];DB.entries[k]=e;
-  logEvent({type:prev?'update':'create',k,val:e,prev});
+  setEntry(k,{cat});
   persist();
   toast(`✓ ${cat} eingetragen`);
   renderDash();
-  calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+  refreshCals();
 }
 function renderMonthCards(){
   const wrap=document.getElementById('mcards');if(!wrap)return;
@@ -2634,21 +2598,14 @@ function renderYearCal(){
       if(k===todayK)cls+=' today';
       if(entry&&entry.note)cls+=' hasnote';
       const tip=entry?`${WD[dow]} ${pad(d)}.${pad(m+1)}. · ${entry.cat}${entry.k?' '+entry.k+'-'+entry.g:''}${entry.note?' · '+entry.note:''}`:`${WD[dow]} ${pad(d)}.${pad(m+1)}.${y}`;
-      cells+=`<div class="${cls}" data-k="${k}" title="${tip}">${d}</div>`;
+      cells+=`<div class="${cls}" data-k="${k}" title="${esc(tip)}">${d}</div>`;
     }
     const mDiffTxt=monthKeys.length?` · ${sgn(mDiff)}`:'';
     html+=`<div class="yrm"><div class="yrmh"><span>${MONTHS[m]}</span><span class="yrmd">${monthKeys.length} Tage${mDiffTxt}</span></div><div class="yrgrid">${cells}</div></div>`;
   }
   html+='</div>';
   wrap.innerHTML=html;
-  wrap.querySelectorAll('.yrdy[data-k]').forEach(b=>b.onclick=()=>{
-    const k=b.dataset.k;
-    document.querySelector('#modeSeg button[data-mode="single"]').click();
-    document.querySelector('nav button[data-view="v-input"]').click();
-    calTag&&calTag.setSelection(k);
-    document.getElementById('sDate').value=k;loadSingle();liveSingle();
-    window.scrollTo({top:0,behavior:'smooth'});
-  });
+  wrap.querySelectorAll('.yrdy[data-k]').forEach(b=>b.onclick=()=>openDay(b.dataset.k));
 }
 /* Heatmap-Modus Toggle */
 document.querySelectorAll('#yrMode button').forEach(b=>b.onclick=()=>{
@@ -2666,10 +2623,10 @@ function dayRow(k){
   if(r.hol)badges.push('<span class="badge hol">Feiertag</span>');
   else if(r.weekend)badges.push('<span class="badge we">WE</span>');
   if(r.half)badges.push('<span class="badge" style="color:var(--neon-soft);border-color:var(--neon-dim)">½-Tag</span>');
-  if(r.cat!=='Arbeit')badges.push(`<span class="badge">${r.cd.l.replace(' (ganzer Tag)','').replace(' (Standard)','')}</span>`);
+  if(r.cat!=='Arbeit')badges.push(`<span class="badge">${catShort(r.cat)}</span>`);
   if(r.hasT){tm=`${e.k}–${e.g}`;meta=`<span class="meta">${badges.join(' ')}<span>Pause ${minToH(r.pause)}</span></span>`;}
-  else{tm=r.cat==='Arbeit'?'<span style="color:var(--mut)">—</span>':r.cd.l.replace(' (ganzer Tag)','');meta=badges.length?`<span class="meta">${badges.join(' ')}</span>`:'';}
-  const noteRow=e&&e.note?`<div class="dnote">📝 ${e.note.replace(/</g,'&lt;')}</div>`:'';
+  else{tm=r.cat==='Arbeit'?'<span style="color:var(--mut)">—</span>':catShort(r.cat);meta=badges.length?`<span class="meta">${badges.join(' ')}</span>`:'';}
+  const noteRow=e&&e.note?`<div class="dnote">📝 ${esc(e.note)}</div>`:'';
   const dc=r.diff>0?'pos':r.diff<0?'neg':'zero';
   const right=r.diff!=null?`<div class="diff ${dc}">${sgn(r.diff)}</div><div class="ist">${r.ist!=null?'Ist '+minToH(r.ist):'Soll '+minToH(Math.abs(r.soll))}</div>`:`<div class="ist">—</div>`;
   return `<div class="${cls}">
@@ -2688,22 +2645,22 @@ document.querySelectorAll('#otScope button').forEach(b=>b.onclick=()=>{
 function otWeeks(){
   const weeks={};
   for(const k in DB.entries){
-    const d=keyDate(k);
-    if(d.getFullYear()!==DB.settings.year)continue;
+    /* Woche gehört zum Jahr ihres Donnerstags (ISO) -- KW 53/2026 enthält auch 1.–3.1.2027 */
+    const d=keyDate(k);const mon=mondayOf(d);
+    const thu=new Date(mon);thu.setDate(mon.getDate()+3);
+    if(thu.getFullYear()!==DB.settings.year)continue;
     const r=compute(k,DB.entries[k]);
-    const w=isoWeek(d);
-    if(!weeks[w]){
-      const mon=isoWeekMonday(DB.settings.year,w);
+    const id=dateKey(mon);
+    if(!weeks[id]){
       const fri=new Date(mon);fri.setDate(mon.getDate()+4);
-      const thu=new Date(mon);thu.setDate(mon.getDate()+3);
-      weeks[w]={w,net:0,ist:0,mon,fri,month:thu.getMonth()};
+      weeks[id]={w:isoWeek(mon),net:0,ist:0,mon,fri,month:thu.getMonth()};
     }
-    if(r.diff!=null)weeks[w].net+=r.diff;
-    if(r.ist!=null)weeks[w].ist+=r.ist;
+    if(r.diff!=null)weeks[id].net+=r.diff;
+    if(r.ist!=null)weeks[id].ist+=r.ist;
   }
   return Object.values(weeks)
     .filter(x=>Math.round(x.net)>0&&(otScopeVal==='year'||x.month===curMonth))
-    .sort((a,b)=>a.w-b.w);
+    .sort((a,b)=>a.mon-b.mon);
 }
 function renderOT(){
   const weeks=otWeeks();let tot=0;weeks.forEach(x=>tot+=x.net);
@@ -2717,7 +2674,7 @@ function renderOT(){
       const day=new Date(x.mon);day.setDate(x.mon.getDate()+i);
       const dk=dateKey(day);const e=DB.entries[dk];if(!e)continue;
       const r=compute(dk,e);if(r.diff==null)continue;
-      const tm=(e.k&&e.g)?`${e.k}–${e.g}`:catDef(e.cat).l.replace(' (ganzer Tag)','').replace(' (Standard)','');
+      const tm=(e.k&&e.g)?`${e.k}–${e.g}`:catShort(e.cat);
       const dc=r.diff>0?'pos':r.diff<0?'neg':'zero';
       const ist=r.ist!=null?minToH(r.ist):'';
       days+=`<div class="otdayrow"><span class="otd">${WD[day.getDay()]} ${pad(day.getDate())}.${pad(day.getMonth()+1)}.</span><span class="otv">${tm}</span><span class="oti">${ist}</span><span class="otdf ${dc}">${sgn(r.diff)}</span></div>`;
@@ -2738,8 +2695,8 @@ function buildOtReport(){
       const day=new Date(x.mon);day.setDate(x.mon.getDate()+i);
       const dk=dateKey(day);const e=DB.entries[dk];if(!e)continue;
       const r=compute(dk,e);if(r.diff==null)continue;
-      const tm=(e.k&&e.g)?`${e.k} – ${e.g}`:catDef(e.cat).l.replace(' (ganzer Tag)','').replace(' (Standard)','');
-      const note=e.note?`<div class="prnote">${e.note.replace(/</g,'&lt;')}</div>`:'';
+      const tm=(e.k&&e.g)?`${e.k} – ${e.g}`:catShort(e.cat);
+      const note=e.note?`<div class="prnote">${esc(e.note)}</div>`:'';
       rows+=`<tr><td>${WD[day.getDay()]} ${pad(day.getDate())}.${pad(day.getMonth()+1)}.</td><td>${tm}${note}</td><td class="num">${r.ist!=null?minToH(r.ist):''}</td><td class="num"><span class="${r.diff>0?'pos':r.diff<0?'neg':''}">${sgn(r.diff)}</span></td></tr>`;
     }
   });
@@ -2773,7 +2730,7 @@ document.getElementById('otCopy').onclick=()=>{
       const day=new Date(x.mon);day.setDate(x.mon.getDate()+i);
       const dk=dateKey(day);const e=DB.entries[dk];if(!e)continue;
       const r=compute(dk,e);if(r.diff==null)continue;
-      const tm=(e.k&&e.g)?`${e.k}–${e.g}`:catDef(e.cat).l.replace(' (ganzer Tag)','').replace(' (Standard)','');
+      const tm=(e.k&&e.g)?`${e.k}–${e.g}`:catShort(e.cat);
       lines.push(`  ${WD[day.getDay()]} ${pad(day.getDate())}.${pad(day.getMonth()+1)}.  ${tm.padEnd(13)}  ${sgn(r.diff)}`);
     }
     return lines.join('\n');
@@ -2802,7 +2759,7 @@ function findMissingWorkdays(){
   }
   return out;
 }
-let _bfStateComment=null;  /* bfState ist oben bei persist deklariert: {queue:[], idx:0, done:[], skipped:[]} */
+/* bfState (oben bei persist deklariert): {queue:[], idx:0, done:[], skipped:[]} */
 function renderBfBanner(){
   const banner=document.getElementById('bfBanner');if(!banner)return;
   const missing=findMissingWorkdays();
@@ -2821,7 +2778,7 @@ function bfShowCurrent(){
   document.getElementById('bfWd').textContent=WDL[d.getDay()];
   document.getElementById('bfDate').textContent=`${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
   document.getElementById('bfKw').textContent=`KW ${pad(isoWeek(d))}`;
-  document.getElementById('bfSpaetTm').textContent=d.getDay()===5?'11:30–20:00':'13:30–22:00';
+  document.getElementById('bfSpaetTm').textContent=shiftTxt('spaet',d.getDay());
   document.getElementById('bfUndoRow').style.display=(bfState.done.length||bfState.skipped.length)?'block':'none';
   /* Plan-Hinweis: falls für diesen Tag ein Plan existiert */
   const planBtn=document.getElementById('bfPlanOk');
@@ -2848,18 +2805,15 @@ function bfAnswer(choice){
   const d=keyDate(k);
   if(choice==='skip'){
     bfState.skipped.push(k);
-  }else if(choice==='frueh'||choice==='tag'||choice==='spaet'){
-    let kk,gg;
-    if(choice==='frueh'){kk='06:00';gg='14:30';}
-    else if(choice==='tag'){kk='06:30';gg='15:00';}
-    else{if(d.getDay()===5){kk='11:30';gg='20:00';}else{kk='13:30';gg='22:00';}}
+  }else if(shiftTimes(choice,1)){
+    const t=shiftTimes(choice,d.getDay());
     if(bfEditMode){
       /* Edit-Modus: nur vorbefüllen, User passt an und speichert via bfCustomSave */
-      document.getElementById('bfK').value=kk;
-      document.getElementById('bfG').value=gg;
+      document.getElementById('bfK').value=t.k;
+      document.getElementById('bfG').value=t.g;
       return;  /* NICHT weiter — wartet auf Eintragen-Button */
     }
-    DB.entries[k]={cat:'Arbeit',k:kk,g:gg};
+    DB.entries[k]={cat:'Arbeit',k:t.k,g:t.g};
     bfState.done.push(k);
   }else{
     /* Kategorie ohne Zeiten: Urlaub/Krank/Bereitschaft/Ausgleichszeit */
@@ -2880,7 +2834,7 @@ function bfCustomSave(){
   const kk=document.getElementById('bfK').value;
   const gg=document.getElementById('bfG').value;
   if(!kk||!gg){toast('Kommen & Gehen angeben');return;}
-  if(kk>=gg){toast('Gehen muss nach Kommen liegen');return;}
+  if(kk===gg){toast('Kommen und Gehen sind gleich');return;}  /* Gehen < Kommen = über Mitternacht, wie im Tag-Formular */
   DB.entries[k]={cat:'Arbeit',k:kk,g:gg};
   bfState.done.push(k);
   bfState.idx++;
@@ -2914,7 +2868,7 @@ function bfFinish(){
       toast(`✓ ${n} Tag${n===1?'':'e'} nachgetragen${sk?` · ${sk} übersprungen`:''}`);
     }
     renderDash();renderTodayCard();renderWeekLive();
-    calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+    refreshCals();
   }else{
     toast(sk?`${sk} übersprungen — nichts eingetragen`:'Nichts geändert');
   }
@@ -3023,7 +2977,7 @@ function buildReport(m){
       if(r.ist!=null)ist=minToH(r.ist);
       if(r.diff!=null)diff=`<span class="${r.diff>0?'pos':r.diff<0?'neg':''}">${sgn(r.diff)}</span>`;
     }
-    const noteC=e&&e.note?`<div class="prnote">${e.note.replace(/</g,'&lt;')}</div>`:'';
+    const noteC=e&&e.note?`<div class="prnote">${esc(e.note)}</div>`:'';
     rows+=`<tr class="${cls}"><td>${WD[dow]} ${pad(d)}.${pad(m+1)}.</td><td>${art}${noteC}</td><td class="num">${zeit}</td><td class="num">${pause}</td><td class="num">${ist}</td><td class="num">${diff}</td></tr>`;
     d++;
   }
@@ -3105,7 +3059,7 @@ function planMonthWeeks(m){
     const wk=isoWeek(dt);
     if(seen.has(wk))continue;
     seen.add(wk);
-    const mon=isoWeekMonday(dt.getFullYear(),wk);
+    const mon=mondayOf(dt);
     const days=[];
     for(let i=0;i<5;i++){
       const dd=new Date(mon);dd.setDate(mon.getDate()+i);
@@ -3171,7 +3125,7 @@ document.getElementById('planSave').onclick=()=>{
   planDraft={};
   persist();
   renderPlanGrid();
-  calTag&&calTag.refresh();calRange&&calRange.refresh();
+  refreshCals();
   renderTodayCard();
   toast(`✓ Plan gespeichert · ${n} Tage`);
 };
@@ -3183,7 +3137,7 @@ document.getElementById('planClear').onclick=()=>{
   if(!confirm(`Plan für ${MONTHS[m]} löschen (${keys.length} Tage)?`))return;
   keys.forEach(k=>delete DB.plan[k]);
   planDraft={};
-  persist();renderPlanGrid();calTag&&calTag.refresh();renderTodayCard();
+  persist();renderPlanGrid();refreshCals();renderTodayCard();
   toast(`Plan ${MONTHS[m]} gelöscht`);
 };
 
@@ -3309,13 +3263,13 @@ function catFuzzyMatch(token){
   return alias[norm.replace(/\s+/g,'')]||null;
 }
 /* ---------- Plausibilitäts-Check ---------- */
-function plausibilityFlags(entry,weekAvgIst){
-  /* Prüft einen Arbeit-Eintrag auf auffällige Werte. Gibt Array von Warnhinweisen zurück (leer = unauffällig). */
+function plausibilityFlags(k,entry,weekAvgIst){
+  /* Prüft einen Arbeit-Eintrag auf auffällige Werte. Gibt Array von Warnhinweisen zurück (leer = unauffällig).
+     Ist kommt aus compute() -- gleiche Pausenregeln (inkl. Wochenende) wie überall sonst. */
   const flags=[];
   if(!entry||entry.cat!=='Arbeit'||!entry.k||!entry.g)return flags;
   const kMin=hToMin(entry.k),gMin=hToMin(entry.g);
-  let gross=gMin-kMin;if(gross<0)gross+=1440;
-  const ist=gross-breakMin(gross,false,entry.pauseOverride);
+  const ist=compute(k,entry).ist;
   const istH=ist/60;
   if(istH>10)flags.push(`Sehr lang: ${minToH(ist)} an einem Tag`);
   if(istH>0&&istH<=3)flags.push(`Sehr kurz: nur ${minToH(ist)}`);
@@ -3325,15 +3279,15 @@ function plausibilityFlags(entry,weekAvgIst){
   if(weekAvgIst!=null&&Math.abs(istH-weekAvgIst)>2)flags.push(`Weicht >2h vom Wochenschnitt ab (Ø ${weekAvgIst.toFixed(1)}h)`);
   return flags;
 }
-function weekAvgIstFor(k){
-  /* Ø Ist-Stunden der ISO-Woche von k, ohne den Tag k selbst */
-  const d=keyDate(k);const y=d.getFullYear();const wk=isoWeek(d);
-  const mon=isoWeekMonday(y,wk);
+function weekAvgIstFor(k,batchByKey){
+  /* Ø Ist-Stunden der Woche von k, ohne den Tag k selbst.
+     batchByKey: noch nicht gespeicherte Einträge (Text-Import), die mitzählen sollen */
+  const mon=mondayOf(keyDate(k));
   let sum=0,n=0;
   for(let i=0;i<7;i++){
     const dd=new Date(mon);dd.setDate(mon.getDate()+i);
     const kk=dateKey(dd);if(kk===k)continue;
-    const e=DB.entries[kk];
+    const e=(batchByKey&&batchByKey[kk])||DB.entries[kk];
     if(e&&e.cat==='Arbeit'&&e.k&&e.g){
       const r=compute(kk,e);
       if(r.ist!=null){sum+=r.ist/60;n++;}
@@ -3347,7 +3301,7 @@ function findFlaggedEntries(){
   Object.keys(DB.entries).forEach(k=>{
     if(DB.flagsReviewed[k])return;
     const e=DB.entries[k];
-    const flags=plausibilityFlags(e,weekAvgIstFor(k));
+    const flags=plausibilityFlags(k,e,weekAvgIstFor(k));
     if(flags.length)out.push({k,e,flags});
   });
   return out.sort((a,b)=>a.k<b.k?-1:1);
@@ -3370,7 +3324,7 @@ function parseImportLine(line,idx){
   if(timeRe.test(rest[0])){
     if(rest.length<2||!timeRe.test(rest[1]))return {lineNo:idx+1,raw,error:'Gehen-Zeit fehlt oder ungültig'};
     const kk=rest[0],gg=rest[1];
-    if(kk>=gg)return {lineNo:idx+1,raw,error:'Gehen muss nach Kommen liegen'};
+    if(kk===gg)return {lineNo:idx+1,raw,error:'Kommen und Gehen sind gleich'};  /* Gehen < Kommen = über Mitternacht, wie im Tag-Formular */
     const note=rest.slice(2).join(' ').trim();
     const entry={cat:'Arbeit',k:kk,g:gg};
     if(note)entry.note=note;
@@ -3391,24 +3345,6 @@ function parseImportLine(line,idx){
   return {lineNo:idx+1,raw,k,dt,entry};
 }
 let impParsed=[];
-function weekAvgIstForBatch(k,batchByKey){
-  /* Wie weekAvgIstFor, aber bezieht auch die anderen Zeilen desselben Import-Batches mit ein
-     (DB.entries kennt sie ja noch nicht, wenn man mehrere Wochentage auf einmal importiert) */
-  const d=keyDate(k);const y=d.getFullYear();const wk=isoWeek(d);
-  const mon=isoWeekMonday(y,wk);
-  let sum=0,n=0;
-  for(let i=0;i<7;i++){
-    const dd=new Date(mon);dd.setDate(mon.getDate()+i);
-    const kk=dateKey(dd);if(kk===k)continue;
-    const e=batchByKey[kk]||DB.entries[kk];
-    if(e&&e.cat==='Arbeit'&&e.k&&e.g){
-      const kMin=hToMin(e.k),gMin=hToMin(e.g);let gross=gMin-kMin;if(gross<0)gross+=1440;
-      const ist=(gross-breakMin(gross,false,e.pauseOverride))/60;
-      sum+=ist;n++;
-    }
-  }
-  return n>0?sum/n:null;
-}
 function renderImportPreview(){
   const box=document.getElementById('impPreview');
   const text=document.getElementById('impText').value;
@@ -3420,18 +3356,18 @@ function renderImportPreview(){
   const overwrites=valid.filter(p=>DB.entries[p.k]);
   /* Plausibilität: Batch-Kontext für Wochenschnitt aufbauen, dann jede Zeile prüfen */
   const batchByKey={};valid.forEach(p=>{batchByKey[p.k]=p.entry;});
-  valid.forEach(p=>{p.flags=plausibilityFlags(p.entry,weekAvgIstForBatch(p.k,batchByKey));});
+  valid.forEach(p=>{p.flags=plausibilityFlags(p.k,p.entry,weekAvgIstFor(p.k,batchByKey));});
   const flagged=valid.filter(p=>p.flags&&p.flags.length);
   let html=`<div class="impsum"><b>${valid.length}</b> gültig${overwrites.length?` · <span class="warn">${overwrites.length} überschreiben</span>`:''}${flagged.length?` · <span class="warn">${flagged.length} prüfen</span>`:''}${errors.length?` · <span class="err">${errors.length} Fehler</span>`:''}</div>`;
   html+='<div class="implist">';
   impParsed.forEach(p=>{
     if(p.error){
-      html+=`<div class="improw error"><span class="impd">Z${p.lineNo}</span><span class="impv">${p.raw.replace(/</g,'&lt;')}</span><span class="impflag">${p.error}</span></div>`;
+      html+=`<div class="improw error"><span class="impd">Z${p.lineNo}</span><span class="impv">${esc(p.raw)}</span><span class="impflag">${p.error}</span></div>`;
       return;
     }
     const d=p.dt;
     const dtxt=`${WD[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`;
-    const vtxt=fmtEntry(p.entry);
+    const vtxt=esc(fmtEntry(p.entry));
     const isOver=!!DB.entries[p.k];
     const hasFlags=p.flags&&p.flags.length;
     const cls=hasFlags?'flagged':(isOver?'overwrite':'ok');
@@ -3461,13 +3397,13 @@ function applyImport(){
     const prev=DB.entries[p.k];
     if(prev){overwritten++;overDetails.push({k:p.k,prev,next:p.entry});}
     applied.push({k:p.k,prev:prev||null,next:p.entry});
-    DB.entries[p.k]=p.entry;
+    DB.entries[p.k]=p.entry;delete DB.flagsReviewed[p.k];
     n++;
   });
   logEvent({type:'bulk',label:'Text-Import',n,kept:0,skipped:0,over:overDetails,applied});
   persist();
   renderDash();renderTodayCard();renderWeekLive();
-  calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+  refreshCals();
   document.getElementById('impText').value='';
   document.getElementById('impPreview').innerHTML='';
   impParsed=[];
@@ -3592,7 +3528,7 @@ document.getElementById('setHDApply').onclick=()=>{
   if(n===0){toast('Schon aktuell');return;}
   const over=applied.filter(a=>a.prev);
   logEvent({type:'bulk',label:`Halbtage ${y}: ${labels}`,n,kept:0,skipped:0,over,applied});
-  persist();renderDash();renderTodayCard();calTag&&calTag.refresh();calRange&&calRange.refresh();
+  persist();renderDash();renderTodayCard();refreshCals();
   toast(`✓ 24./31.12.${y} ${labels}`);
 };
 document.getElementById('setSave').onclick=()=>{
@@ -3722,7 +3658,7 @@ function applyMerged(mg,conf){
   syncSnap=buildSnap();
   Store.save(DB);
   renderDash();renderBfBanner();
-  calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+  refreshCals();
 }
 function localIsFresh(){
   /* Frisch installiertes Gerät: nur die automatisch geseedeten Halbtage, sonst nichts */
@@ -3880,7 +3816,7 @@ function renderDbxUi(){
   const l=t.lastOk?new Date(t.lastOk):null;
   const lt=l?`Zuletzt synchronisiert: ${pad(l.getDate())}.${pad(l.getMonth()+1)}. ${pad(l.getHours())}:${pad(l.getMinutes())}`:'Noch nicht synchronisiert';
   const st={ok:'✓ synchronisiert',busy:'… synchronisiere',err:'✗ Fehler: '+syncMsg,auth:'✗ Anmeldung abgelaufen – bitte neu verbinden'}[syncStatus]||'Verbunden';
-  note.innerHTML=`<b>Mit Dropbox verbunden.</b><br>${st.replace(/</g,'&lt;')}<br>${lt}`;
+  note.innerHTML=`<b>Mit Dropbox verbunden.</b><br>${esc(st)}<br>${lt}`;
 }
 document.getElementById('dbxConnect').onclick=()=>dbxConnect().catch(e=>toast('⚠ '+e.message));
 document.getElementById('dbxSync').onclick=()=>syncNow(true);
@@ -3936,6 +3872,7 @@ function importBackup(file){
       monthSel.innerHTML=MONTHS.map((m,i)=>`<option value="${i}">${m} ${DB.settings.year}</option>`).join('');
       buildKW();
       applyTheme(DB.settings.theme||'dark');
+      logEvent({type:'settings',detail:`Sicherung importiert · ${n} Einträge`});
       persist();
       /* Settings-Modal-Inputs aktualisieren */
       document.getElementById('setWeek').value=DB.settings.weekHours;
@@ -3946,8 +3883,7 @@ function importBackup(file){
       curMonth=Math.min(Math.max(curMonth,0),11);
       monthSel.value=curMonth;
       renderDash();renderOT();renderLog&&renderLog();liveSingle();
-      calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
-      logEvent({type:'settings',detail:`Sicherung importiert · ${n} Einträge`});
+      refreshCals();
       toast(`✓ ${n} Einträge wiederhergestellt`);
     }catch(err){toast('✗ Datei nicht lesbar');console.error(err);}
   };
@@ -4070,7 +4006,7 @@ function exportPlan(){ // [{month, k, label, kommen, gehen, write}]
   for(const k in DB.entries){const d=keyDate(k);if(d.getFullYear()!==DB.settings.year)continue;
     const e=DB.entries[k];const cd=catDef(e.cat);const row=d.getDate()+5;
     plan.push({m:d.getMonth(),row,k,date:`${pad(d.getDate())}.${pad(d.getMonth()+1)}.`,
-      kommen:(cd.times&&e.k)?e.k:null,gehen:(cd.times&&e.g)?e.g:null,write:cd.write,catLbl:cd.l});}
+      kommen:(cd.times&&e.k)?e.k:null,gehen:(cd.times&&e.g)?e.g:null,write:cd.write,cat:e.cat});}
   return plan.sort((a,b)=>a.k<b.k?-1:1);
 }
 function renderPreview(){updateExportState();}
@@ -4127,7 +4063,7 @@ function updateExportState(){
   let html='';Object.keys(byM).sort((a,b)=>a-b).forEach(m=>{
     html+=`<div class="pvmonth">${MONTHS[m]} · ${byM[m].length} Tage</div>`;
     byM[m].forEach(p=>{
-      let t=p.kommen?`${p.kommen} – ${p.gehen}`:`<span style="color:var(--amber)">${p.catLbl.replace(' (ganzer Tag)','').replace(' (Standard)','')}</span>`;
+      let t=p.kommen?`${p.kommen} – ${p.gehen}`:`<span style="color:var(--amber)">${catShort(p.cat)}</span>`;
       html+=`<div class="pvrow"><span class="pd">${p.date}</span><span class="pt">${t}</span></div>`;
     });
   });
@@ -4243,13 +4179,14 @@ function fmtEntry(e){
   if(!e)return '—';
   const noteTxt=e.note?` 📝 „${e.note}"`:'';
   if(e.k&&e.g)return `${e.k}–${e.g}${e.cat&&e.cat!=='Arbeit'?` [${e.cat}]`:''}${noteTxt}`;
-  return catDef(e.cat).l.replace(' (ganzer Tag)','').replace(' (Standard)','')+noteTxt;
+  return catShort(e.cat)+noteTxt;
 }
 function fmtEvent(ev){
   const datePart=ev.k?(()=>{const d=keyDate(ev.k);return `${WD[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`;})():'';
-  if(ev.type==='create')return {badge:'tag',badgeText:'erstellt',lbl:datePart,det:fmtEntry(ev.val)};
-  if(ev.type==='update')return {badge:'tag',badgeText:'geändert',lbl:datePart,det:`${fmtEntry(ev.prev)} → ${fmtEntry(ev.val)}`};
-  if(ev.type==='delete')return {badge:'tag',badgeText:'gelöscht',lbl:datePart,det:fmtEntry(ev.prev)};
+  /* fmtEntry liefert Klartext (auch für confirm()/Verlaufstexte) -- hier fürs HTML maskieren */
+  if(ev.type==='create')return {badge:'tag',badgeText:'erstellt',lbl:datePart,det:esc(fmtEntry(ev.val))};
+  if(ev.type==='update')return {badge:'tag',badgeText:'geändert',lbl:datePart,det:`${esc(fmtEntry(ev.prev))} → ${esc(fmtEntry(ev.val))}`};
+  if(ev.type==='delete')return {badge:'tag',badgeText:'gelöscht',lbl:datePart,det:esc(fmtEntry(ev.prev))};
   if(ev.type==='bulk'){
     let d=`${ev.n} Tag${ev.n===1?'':'e'} eingetragen`;
     if(ev.kept)d+=` · ${ev.kept} behalten`;
@@ -4258,18 +4195,18 @@ function fmtEvent(ev){
       let inner='';
       ev.over.forEach(o=>{
         const dd=keyDate(o.k);
-        inner+=`<div class="logoverline"><span>${WD[dd.getDay()]} ${pad(dd.getDate())}.${pad(dd.getMonth()+1)}.</span><span class="lo-prev">${fmtEntry(o.prev)}</span><span class="lo-arr">→</span><span class="lo-next">${fmtEntry(o.next)}</span></div>`;
+        inner+=`<div class="logoverline"><span>${WD[dd.getDay()]} ${pad(dd.getDate())}.${pad(dd.getMonth()+1)}.</span><span class="lo-prev">${esc(fmtEntry(o.prev))}</span><span class="lo-arr">→</span><span class="lo-next">${esc(fmtEntry(o.next))}</span></div>`;
       });
       d+=`<details class="logover"><summary>${ev.over.length} überschrieben</summary>${inner}</details>`;
     }
     const undoable=ev.applied&&ev.applied.length&&!ev.undone;
     if(ev.undone)d+=`<div class="logundone">↶ rückgängig gemacht</div>`;
     else if(undoable)d+=`<button type="button" class="logundo" data-undo-ts="${ev.ts}">↶ Diesen Bulk-Eintrag rückgängig machen (${ev.applied.length} Tage)</button>`;
-    return {badge:'bulk',badgeText:'bulk',lbl:ev.label||'Eingabe',det:d};
+    return {badge:'bulk',badgeText:'bulk',lbl:esc(ev.label||'Eingabe'),det:d};
   }
-  if(ev.type==='export')return {badge:'export',badgeText:'export',lbl:`${ev.n} Einträge → Datei`,det:ev.file||''};
-  if(ev.type==='settings')return {badge:'settings',badgeText:'einstellungen',lbl:'Einstellungen geändert',det:ev.detail||''};
-  return {badge:'',badgeText:ev.type,lbl:JSON.stringify(ev),det:''};
+  if(ev.type==='export')return {badge:'export',badgeText:'export',lbl:`${ev.n} Einträge → Datei`,det:esc(ev.file||'')};
+  if(ev.type==='settings')return {badge:'settings',badgeText:'einstellungen',lbl:'Einstellungen geändert',det:esc(ev.detail||'')};
+  return {badge:'',badgeText:esc(ev.type),lbl:esc(JSON.stringify(ev)),det:''};
 }
 let logFilter='all';
 function eventMatchesFilter(ev,f){
@@ -4291,7 +4228,6 @@ function undoBulkEvent(ts){
        falls der Tag inzwischen manuell weiter verändert wurde, überschreiben wir das nicht blind. */
     const current=DB.entries[a.k];
     const matchesNext=current&&a.next&&JSON.stringify(current)===JSON.stringify(a.next);
-    const matchesDeleted=!current&&a.next===null&&a.prev===null; /* nichts zu tun, war eh schon leer -- sollte nicht vorkommen */
     if(matchesNext||(a.next===null&&current===undefined)){
       if(a.prev===null)delete DB.entries[a.k];
       else DB.entries[a.k]=a.prev;
@@ -4303,7 +4239,7 @@ function undoBulkEvent(ts){
   persist();
   renderLog();
   renderDash();renderTodayCard();renderWeekLive();renderFlagCatch&&renderFlagCatch();
-  calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+  refreshCals();
   toast(`↶ ${n} Tag${n===1?'':'e'} zurückgesetzt`);
 }
 function renderLog(){
@@ -4362,10 +4298,9 @@ function handleShortcut(){
     if(!code){toast('Für heute ist kein Plan hinterlegt');return;}
     const e=planToEntry(code,today.getDay());if(!e)return;
     if(e.cat==='Arbeit'&&!confirm48h({[k]:e}))return;
-    DB.entries[k]=e;
-    logEvent({type:'create',k,val:e});
+    setEntry(k,e);
     persist();renderDash();
-    calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+    refreshCals();
     toast(`✓ ${planLabel(code)} eingetragen`);
   }
 }
