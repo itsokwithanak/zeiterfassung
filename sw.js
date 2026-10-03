@@ -2,7 +2,7 @@
    App-Dateien: network-first (Updates kommen sofort an, offline aus dem Cache; nach 4 s ohne Antwort ebenfalls Cache).
    Google-Fonts: cache-first. Alles andere (Dropbox-API, Tesseract-CDN) wird nicht angefasst.
    Bei Änderungen an CORE die Versionsnummer in CACHE erhöhen. */
-const CACHE='ak-zeit-v1';
+const CACHE='ak-zeit-v2';
 const CORE=['./','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install',e=>{

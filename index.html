@@ -880,7 +880,10 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
       <div class="cap">Wochen mit Plus — für den Zettel</div>
       <div id="otList"></div>
     </div>
-    <button class="act ghost" id="otCopy">📋 Liste kopieren</button>
+    <div class="row2">
+      <button class="act ghost" id="otCopy" style="margin:0">📋 Liste kopieren</button>
+      <button class="act ghost" id="otPrint" style="margin:0">🖨 Als PDF</button>
+    </div>
     <div class="hint">Nur Wochen, deren Gesamt-Ist übers Wochen-Soll geht (40 h, bzw. weniger bei Feiertag/½-Tag). Ausgeglichene Wochen tauchen nicht auf — genau dieser Netto-Überschuss kommt auf den Zettel.</div>
   </section>
 
@@ -904,6 +907,7 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
       <label class="fl">2 · Datei erzeugen</label>
       <div id="aStatus" class="statline">…</div>
       <button class="act" id="dlBtn">⤓ Befüllte Excel-Datei jetzt erstellen</button>
+      <button class="act ghost" id="dbxExpBtn" style="margin-top:8px;display:none">☁ In Dropbox speichern (Ordner „Exporte")</button>
       <div class="hint" id="dlHint" style="margin-top:10px"><b>⚠ Test-Hinweis:</b> Einmal in Excel öffnen und prüfen, ob Zeiten &amp; Summen stimmen. Wenn was nicht passt, sag Bescheid.</div>
     </div>
 
@@ -1355,7 +1359,7 @@ function compute(k,e){
   else soll=eff;
   let ist=null,gross=null,pause=0;
   const hasT=e&&e.k&&e.g&&cd.times;
-  if(hasT){const c=hToMin(e.k),g=hToMin(e.g);gross=g-c;if(gross<0)gross+=1440;pause=breakMin(gross,weekend,e.pauseOverride);let K=g-c-pause;if(K<=0)K+=1440;ist=K;}
+  if(hasT){const c=hToMin(e.k),g=hToMin(e.g);gross=g-c;if(gross<0)gross+=1440;pause=breakMin(gross,weekend,e.pauseOverride);ist=Math.max(0,gross-pause);}  /* gross ist schon über Mitternacht korrigiert -- kein zweites +24h (Kommen=Gehen ergab sonst 24:00) */
   let diff=null;
   if(cat==="Ausgleichszeit"||cat==="Kompensationstag Grp2") diff=soll;
   else if(cat==="Krank") diff=soll;
@@ -1490,7 +1494,8 @@ const calShift=makeCal('calShift','week',{
 
 /* ---------- toast ---------- */
 let tT;
-function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),1900);}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');
+  if(/^[✓■▶☁↶]/.test(m)&&navigator.vibrate){try{navigator.vibrate(12);}catch(e){}}  /* kurzes Feedback am Handy bei Erfolg */clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),1900);}
 
 /* ---------- nav ---------- */
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
@@ -2205,6 +2210,11 @@ function punchOut(){
   if(!DB.pending)return;
   const k=DB.pending.k;
   const gehen=nowHM();
+  if(gehen===DB.pending.kommen){
+    /* versehentlich direkt wieder ausgestempelt: keinen 0:00-Tag anlegen */
+    if(confirm('Weniger als eine Minute eingestempelt.\nStempelung verwerfen?')){DB.pending=null;persist();stopTicker();renderTodayCard();toast('Stempelung verworfen');}
+    return;
+  }
   const e={cat:'Arbeit',k:DB.pending.kommen,g:gehen};
   const prev=DB.entries[k];
   DB.entries[k]=e;
@@ -2715,6 +2725,44 @@ function renderOT(){
     return `<div class="otweek"><div class="otwh"><div><div class="otwt">KW ${pad(x.w)}</div><div class="otws">${md}–${fd} · Ist ${minToH(x.ist)}</div></div><div class="otwn pos">${sgn(x.net)}</div></div>${days?`<div class="otdays">${days}</div>`:''}</div>`;
   }).join('');
 }
+function buildOtReport(){
+  /* Überstunden-Zettel fürs Drucken/PDF -- gleiche Wochen wie die Ansicht (Monat oder Jahr) */
+  const weeks=otWeeks();const y=DB.settings.year;
+  const scope=otScopeVal==='month'?`${MONTHS[curMonth]} ${y}`:String(y);
+  let rows='',tot=0;
+  weeks.forEach(x=>{
+    tot+=x.net;
+    const md=`${pad(x.mon.getDate())}.${pad(x.mon.getMonth()+1)}.`,fd=`${pad(x.fri.getDate())}.${pad(x.fri.getMonth()+1)}.`;
+    rows+=`<tr class="we"><td><b>KW ${pad(x.w)}</b> · ${md}–${fd}</td><td></td><td class="num">${minToH(x.ist)}</td><td class="num"><b class="pos">${sgn(x.net)}</b></td></tr>`;
+    for(let i=0;i<7;i++){
+      const day=new Date(x.mon);day.setDate(x.mon.getDate()+i);
+      const dk=dateKey(day);const e=DB.entries[dk];if(!e)continue;
+      const r=compute(dk,e);if(r.diff==null)continue;
+      const tm=(e.k&&e.g)?`${e.k} – ${e.g}`:catDef(e.cat).l.replace(' (ganzer Tag)','').replace(' (Standard)','');
+      const note=e.note?`<div class="prnote">${e.note.replace(/</g,'&lt;')}</div>`:'';
+      rows+=`<tr><td>${WD[day.getDay()]} ${pad(day.getDate())}.${pad(day.getMonth()+1)}.</td><td>${tm}${note}</td><td class="num">${r.ist!=null?minToH(r.ist):''}</td><td class="num"><span class="${r.diff>0?'pos':r.diff<0?'neg':''}">${sgn(r.diff)}</span></td></tr>`;
+    }
+  });
+  const now=new Date();
+  return `
+    <h1>Überstunden · ${scope}</h1>
+    <div class="prsub">Erstellt ${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())} · nur Wochen mit Netto-Plus über dem Wochensoll</div>
+    <table>
+      <thead><tr><th>Tag</th><th>Zeit / Art</th><th style="text-align:right">Ist</th><th style="text-align:right">Saldo</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="prbottom">
+      <table class="prsum"><tbody><tr class="total"><td>Überstunden gesamt (${weeks.length} Woche${weeks.length===1?'':'n'})</td><td class="num pos">${sgn(tot)}</td></tr></tbody></table>
+      <div class="prfoot"><span>Wochensoll ${DB.settings.weekHours}h · ${DB.settings.workDays} Tage/Woche</span><span>AK-Zeit</span></div>
+    </div>`;
+}
+document.getElementById('otPrint').onclick=()=>{
+  if(!otWeeks().length){toast('Keine Überstunden im Zeitraum');return;}
+  document.getElementById('printReport').innerHTML=buildOtReport();
+  logEvent({type:'export',n:0,file:`Überstunden ${otScopeVal==='month'?MONTHS[curMonth]+' ':''}${DB.settings.year} (PDF)`});
+  persist();
+  setTimeout(()=>window.print(),50);
+};
 document.getElementById('otCopy').onclick=()=>{
   const weeks=otWeeks();if(!weeks.length){toast('Nichts zu kopieren');return;}
   let tot=0;const blocks=weeks.map(x=>{
@@ -3604,7 +3652,7 @@ function randStr(n){const a=new Uint8Array(n);crypto.getRandomValues(a);return b
 function syncSettings(){const s={};for(const k in DB.settings)if(!SYNC_LOCAL_SET.includes(k))s[k]=DB.settings[k];return s;}
 function buildSnap(){
   const ser=o=>{const r={};for(const k in o)r[k]=JSON.stringify(o[k]);return r;};
-  return {e:ser(DB.entries),p:ser(DB.plan),f:ser(DB.flagsReviewed),s:JSON.stringify(syncSettings())};
+  return {e:ser(DB.entries),p:ser(DB.plan),f:ser(DB.flagsReviewed),s:JSON.stringify(syncSettings()),pd:JSON.stringify(DB.pending||null)};
 }
 function trackMap(cur,snap,meta,now){
   for(const k in cur){const s=JSON.stringify(cur[k]);if(snap[k]!==s){meta[k]=now;snap[k]=s;}}
@@ -3614,6 +3662,7 @@ function syncTrack(){
   const now=Date.now(),m=DB.meta;
   trackMap(DB.entries,syncSnap.e,m.e,now);trackMap(DB.plan,syncSnap.p,m.p,now);trackMap(DB.flagsReviewed,syncSnap.f,m.f,now);
   const ss=JSON.stringify(syncSettings());if(ss!==syncSnap.s){syncSnap.s=ss;m.s=now;}
+  const pd=JSON.stringify(DB.pending||null);if(pd!==syncSnap.pd){syncSnap.pd=pd;m.pt=now;}  /* Stempeluhr: am Handy ein-, am PC ausstempeln */
 }
 
 /* --- Merge --- */
@@ -3647,8 +3696,8 @@ function mergeLog(a,b){
   [...a,...b].forEach(ev=>{const id=`${ev.ts}|${ev.type}|${ev.k||ev.label||''}`;const o=by[id];if(!o||(ev.undone&&!o.undone))by[id]=ev;});
   return Object.values(by).sort((x,y)=>y.ts-x.ts).slice(0,500);
 }
-function syncParts(o){return {entries:o.entries||{},plan:o.plan||{},flagsReviewed:o.flagsReviewed||{},settings:o.settings||{},log:o.log||[],meta:o.meta||{}};}
-function localParts(){return syncParts({entries:DB.entries,plan:DB.plan,flagsReviewed:DB.flagsReviewed,settings:syncSettings(),log:DB.log,meta:DB.meta});}
+function syncParts(o){return {entries:o.entries||{},plan:o.plan||{},flagsReviewed:o.flagsReviewed||{},settings:o.settings||{},log:o.log||[],pending:o.pending||null,meta:o.meta||{}};}
+function localParts(){return syncParts({entries:DB.entries,plan:DB.plan,flagsReviewed:DB.flagsReviewed,settings:syncSettings(),log:DB.log,pending:DB.pending,meta:DB.meta});}
 function mergeAll(R){
   const rm=Object.assign({e:{},p:{},f:{},s:0},R.meta||{}),m=DB.meta;
   const E=mergeKeyed(m.e,rm.e||{},DB.entries,R.entries||{});
@@ -3656,16 +3705,18 @@ function mergeAll(R){
   const F=mergeKeyed(m.f,rm.f||{},DB.flagsReviewed,R.flagsReviewed||{});
   const useR=!!R.settings&&(rm.s||0)>=(m.s||0);
   const lc=Math.max(m.lc||0,rm.lc||0);  /* Verlauf auf einem Gerät geleert -> ältere Events überall verwerfen */
+  const pt=Math.max(m.pt||0,rm.pt||0);  /* Stempeluhr: neuere Änderung gewinnt, Gleichstand bleibt lokal */
   const merged=syncParts({entries:E.val,plan:P.val,flagsReviewed:F.val,settings:useR?R.settings:syncSettings(),
     log:mergeLog(DB.log||[],R.log||[]).filter(ev=>ev.ts>lc),
-    meta:Object.assign({e:E.meta,p:P.meta,f:F.meta,s:Math.max(m.s||0,rm.s||0)},lc?{lc}:{})});
+    pending:(rm.pt||0)>(m.pt||0)?(R.pending||null):(DB.pending||null),
+    meta:Object.assign({e:E.meta,p:P.meta,f:F.meta,s:Math.max(m.s||0,rm.s||0)},lc?{lc}:{},pt?{pt}:{})});
   const ms=stable(merged);
   return {merged,conf:E.conf,changedLocal:ms!==stable(localParts()),changedRemote:ms!==stable(syncParts(Object.assign({},R,{meta:rm})))};
 }
 function applyMerged(mg,conf){
   /* Remote-Stand in lokales DB übernehmen, ohne persist() (sonst Upload-Schleife) */
   const keep={};SYNC_LOCAL_SET.forEach(k=>{if(k in DB.settings)keep[k]=DB.settings[k];});
-  DB.entries=mg.entries;DB.plan=mg.plan;DB.flagsReviewed=mg.flagsReviewed;DB.log=mg.log;DB.meta=mg.meta;
+  DB.entries=mg.entries;DB.plan=mg.plan;DB.flagsReviewed=mg.flagsReviewed;DB.log=mg.log;DB.meta=mg.meta;DB.pending=mg.pending;
   DB.settings=Object.assign({},mg.settings,keep);
   conf.forEach(c=>logEvent({type:'settings',detail:`Sync-Konflikt ${c.k}: lokal „${fmtEntry(c.local)}" durch „${fmtEntry(c.remote)}" aus Dropbox ersetzt`}));
   syncSnap=buildSnap();
@@ -3681,7 +3732,7 @@ function localIsFresh(){
   return ks.every(k=>/-12-(24|31)$/.test(k)&&DB.entries[k].cat===DB.settings.halfDayDefault);
 }
 function makeRemote(){
-  return {_app:'AK-Zeit',_v:2,_ts:new Date().toISOString(),entries:DB.entries,plan:DB.plan,flagsReviewed:DB.flagsReviewed,settings:syncSettings(),log:DB.log,meta:DB.meta};
+  return {_app:'AK-Zeit',_v:2,_ts:new Date().toISOString(),entries:DB.entries,plan:DB.plan,flagsReviewed:DB.flagsReviewed,settings:syncSettings(),log:DB.log,pending:DB.pending||null,meta:DB.meta};
 }
 
 /* --- Dropbox-API --- */
@@ -3711,6 +3762,20 @@ async function dbxDownload(){
   if(!data||typeof data!=='object'||typeof data.entries!=='object'||!data.entries)throw new Error('Dropbox-Datei hat falsches Format – nichts überschrieben');
   if(!rev)throw new Error('Dropbox: keine Revision ermittelbar');
   return {rev,data};
+}
+const DBX_TPL='/Vorlage.xlsx',DBX_EXPORT_DIR='/Exporte';
+async function dbxUploadFile(path,body){
+  /* beliebige Datei überschreiben (Vorlage, Exporte) -- ohne Revisions-Check, das ist nur für die Sync-Datei nötig */
+  const r=await dbxFetch('https://content.dropboxapi.com/2/files/upload',{method:'POST',
+    headers:{'Content-Type':'application/octet-stream','Dropbox-API-Arg':JSON.stringify({path,mode:'overwrite',autorename:false,mute:true})},body});
+  if(!r.ok)throw new Error('Dropbox: '+(await r.text()).slice(0,120));
+}
+async function dbxDownloadFile(path){
+  /* ArrayBuffer oder null wenn nicht vorhanden */
+  const r=await dbxFetch('https://content.dropboxapi.com/2/files/download',{method:'POST',headers:{'Dropbox-API-Arg':JSON.stringify({path})}});
+  if(r.status===409){const t=await r.text();if(/not_found/.test(t))return null;throw new Error('Dropbox: '+t.slice(0,120));}
+  if(!r.ok)throw new Error('Dropbox '+r.status);
+  return await r.arrayBuffer();
 }
 async function dbxUpload(obj,rev){
   const mode=rev?{'.tag':'update',update:rev}:{'.tag':'add'};
@@ -3994,6 +4059,8 @@ document.getElementById('tplFile').onchange=async ev=>{
     }
     lbl.textContent='✓ '+f.name;lbl.classList.add('has');
     renderPreview();
+    /* Mit Dropbox: Vorlage dort hinterlegen -> andere Geräte laden sie automatisch */
+    if(dbxConnected())dbxUploadFile(DBX_TPL,f).then(()=>toast('☁ Vorlage in Dropbox hinterlegt')).catch(err=>console.error('[Vorlage]',err));
   }catch(e){tplFiles=null;lbl.textContent='📄 Vorlage (.xlsx) wählen';lbl.classList.remove('has');toast('⚠ '+e.message);document.getElementById('pvCard').style.display='none';}
   ev.target.value='';
 };
@@ -4007,6 +4074,20 @@ function exportPlan(){ // [{month, k, label, kommen, gehen, write}]
   return plan.sort((a,b)=>a.k<b.k?-1:1);
 }
 function renderPreview(){updateExportState();}
+let tplDbxTried=false;  /* pro Sitzung nur ein Versuch, die Vorlage aus der Dropbox zu holen */
+async function loadTplFromDropbox(){
+  if(tplDbxTried||tplFiles||!dbxConnected())return;
+  tplDbxTried=true;
+  try{
+    const buf=await dbxDownloadFile(DBX_TPL);
+    if(!buf||tplFiles)return;
+    const files=await unzipAll(buf);
+    if(!files['xl/workbook.xml'])return;
+    tplFiles=files;
+    const lbl=document.getElementById('fileLbl');lbl.textContent='✓ Vorlage aus Dropbox';lbl.classList.add('has');
+    updateExportState();
+  }catch(e){console.error('[Vorlage]',e);}
+}
 function updateExportState(){
   const aCard=document.getElementById('aCard');
   const aStatus=document.getElementById('aStatus');
@@ -4023,8 +4104,9 @@ function updateExportState(){
     lastTxt.classList.remove('ok');
     lastTxt.innerHTML='<span>📤 Noch nicht exportiert</span>';
   }
-  // Wenn keine Vorlage geladen — Aktions-Card verstecken
-  if(!tplFiles){aCard.style.display='none';pvCard.style.display='none';return;}
+  document.getElementById('dbxExpBtn').style.display=dbxConnected()?'':'none';
+  // Wenn keine Vorlage geladen — Aktions-Card verstecken (vorher einmal in der Dropbox nachsehen)
+  if(!tplFiles){aCard.style.display='none';pvCard.style.display='none';loadTplFromDropbox();return;}
   aCard.style.display='';
   const plan=exportPlan();
   if(!plan.length){
@@ -4079,13 +4161,14 @@ function setCell(doc,ref,kind,value,styleHint){
 }
 const XMLHEAD='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n';
 
-document.getElementById('dlBtn').onclick=async()=>{
-  if(!tplFiles){toast('Erst Vorlage laden');return;}
-  const btn=document.getElementById('dlBtn');btn.disabled=true;const old=btn.textContent;btn.textContent='… wird erstellt';
-  try{
+async function buildExportFile(){
+  /* Befüllte Datei als Blob. Arbeitet auf einer Kopie -- tplFiles bleibt die unberührte Vorlage,
+     sonst würden bei einem zweiten Export gelöschte Einträge in der Datei stehen bleiben. */
+  if(!tplFiles)throw new Error('Erst Vorlage laden');
+  const files=Object.assign({},tplFiles);
     const dp=new DOMParser(),ser=new XMLSerializer();
-    const wbDoc=dp.parseFromString(new TextDecoder().decode(tplFiles['xl/workbook.xml']),'application/xml');
-    const relsDoc=dp.parseFromString(new TextDecoder().decode(tplFiles['xl/_rels/workbook.xml.rels']),'application/xml');
+    const wbDoc=dp.parseFromString(new TextDecoder().decode(files['xl/workbook.xml']),'application/xml');
+    const relsDoc=dp.parseFromString(new TextDecoder().decode(files['xl/_rels/workbook.xml.rels']),'application/xml');
     const relMap={};relsDoc.querySelectorAll('Relationship').forEach(r=>relMap[r.getAttribute('Id')]=r.getAttribute('Target'));
     const pathByName={};
     wbDoc.querySelectorAll('sheet').forEach(s=>{
@@ -4094,8 +4177,8 @@ document.getElementById('dlBtn').onclick=async()=>{
     });
     const plan=exportPlan();
     const docs={}; // name -> {path,doc,sC,sE,sB}
-    function getDoc(month){const nm=MONTHS[month];if(docs[nm])return docs[nm];const p=pathByName[nm];if(!p||!tplFiles[p])throw new Error('Blatt "'+nm+'" nicht gefunden.');
-      const d=dp.parseFromString(new TextDecoder().decode(tplFiles[p]),'application/xml');
+    function getDoc(month){const nm=MONTHS[month];if(docs[nm])return docs[nm];const p=pathByName[nm];if(!p||!files[p])throw new Error('Blatt "'+nm+'" nicht gefunden.');
+      const d=dp.parseFromString(new TextDecoder().decode(files[p]),'application/xml');
       docs[nm]={path:p,doc:d,sC:styleInCol(d,'C'),sE:styleInCol(d,'E'),sB:styleInCol(d,'B')};return docs[nm];}
     plan.forEach(p=>{
       const D=getDoc(p.m);
@@ -4123,20 +4206,37 @@ document.getElementById('dlBtn').onclick=async()=>{
        (Safari/iOS und manche Mobile-Browser fügen sie ein, Chrome/Firefox Desktop nicht).
        Wir prependen XMLHEAD selbst — doppelte Deklaration = Excel öffnet die Datei nicht. */
     const stripXmlDecl=s=>s.replace(/^\s*<\?xml[^>]*\?>\s*/,'');
-    tplFiles['xl/workbook.xml']=enc.encode(XMLHEAD+stripXmlDecl(ser.serializeToString(wbDoc)));
-    for(const nm in docs){tplFiles[docs[nm].path]=enc.encode(XMLHEAD+stripXmlDecl(ser.serializeToString(docs[nm].doc)));}
-    const blob=await makeZipBlob(tplFiles);
-    const url=URL.createObjectURL(blob);const a=document.createElement('a');
-    a.href=url;a.download=`Arbeitszeiterfassung_${DB.settings.year}_befuellt.xlsx`;document.body.appendChild(a);a.click();a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),4000);
+    files['xl/workbook.xml']=enc.encode(XMLHEAD+stripXmlDecl(ser.serializeToString(wbDoc)));
+    for(const nm in docs){files[docs[nm].path]=enc.encode(XMLHEAD+stripXmlDecl(ser.serializeToString(docs[nm].doc)));}
+    const blob=await makeZipBlob(files);
+    return {blob,name:`Arbeitszeiterfassung_${DB.settings.year}_befuellt.xlsx`,n:plan.length};
+}
+async function runExport(btn,busyTxt,deliver){
+  /* gemeinsamer Ablauf für Download und Dropbox: Datei bauen -> ausliefern -> Export protokollieren */
+  if(!tplFiles){toast('Erst Vorlage laden');return;}
+  btn.disabled=true;const old=btn.textContent;btn.textContent=busyTxt;
+  try{
+    const f=await buildExportFile();
+    const where=await deliver(f);
     DB.settings.lastExportTs=Date.now();
-    logEvent({type:'export',n:plan.length,file:a.download});
+    logEvent({type:'export',n:f.n,file:where});
     persist();
-    toast('✓ Datei erstellt — in Excel öffnen & prüfen');
     updateExportState();
   }catch(e){toast('⚠ '+e.message);}
   btn.disabled=false;btn.textContent=old;
-};
+}
+document.getElementById('dlBtn').onclick=()=>runExport(document.getElementById('dlBtn'),'… wird erstellt',async f=>{
+  const url=URL.createObjectURL(f.blob);const a=document.createElement('a');
+  a.href=url;a.download=f.name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+  toast('✓ Datei erstellt — in Excel öffnen & prüfen');
+  return f.name;
+});
+document.getElementById('dbxExpBtn').onclick=()=>runExport(document.getElementById('dbxExpBtn'),'… wird hochgeladen',async f=>{
+  await dbxUploadFile(DBX_EXPORT_DIR+'/'+f.name,f.blob);
+  toast('☁ In Dropbox gespeichert: Exporte/'+f.name);
+  return 'Dropbox: Exporte/'+f.name;
+});
 
 /* ---------- Verlauf / Log ---------- */
 function fmtEntry(e){
@@ -4246,12 +4346,37 @@ document.getElementById('logClear').onclick=()=>{
   if(confirm('Wirklich den gesamten Verlauf löschen?')){DB.meta.lc=Date.now();DB.log=[];persist();  /* lc = "Log geleert bis", damit der Sync ihn nicht zurückholt */renderLog();toast('Verlauf gelöscht');}
 };
 
+/* ---------- App-Kurzbefehle (Langer Druck aufs App-Icon, siehe manifest.webmanifest "shortcuts") ---------- */
+function handleShortcut(){
+  const q=new URLSearchParams(location.search);const a=q.get('a');if(!a)return;
+  history.replaceState(null,'',location.pathname);
+  document.querySelector('nav button[data-view="v-dash"]').click();
+  const today=new Date();const k=dateKey(today);
+  if(today.getFullYear()!==DB.settings.year){toast(`Erst auf ${today.getFullYear()} umstellen`);return;}
+  if(a==='punch'){
+    if(DB.pending){toast(`Läuft schon seit ${DB.pending.kommen}`);return;}
+    punchIn();
+  }else if(a==='plan'){
+    if(DB.entries[k]){toast('Heute ist schon eingetragen');return;}
+    const code=DB.plan[k];
+    if(!code){toast('Für heute ist kein Plan hinterlegt');return;}
+    const e=planToEntry(code,today.getDay());if(!e)return;
+    if(e.cat==='Arbeit'&&!confirm48h({[k]:e}))return;
+    DB.entries[k]=e;
+    logEvent({type:'create',k,val:e});
+    persist();renderDash();
+    calTag&&calTag.refresh();calRange&&calRange.refresh();calShift&&calShift.refresh();
+    toast(`✓ ${planLabel(code)} eingetragen`);
+  }
+}
+
 /* boot */
 if(!Store.ok)document.getElementById('storageWarn').style.display='block';
 updateSaveSub(false);
 booted=true;
 renderDbxUi();
-dbxHandleRedirect().then(()=>{if(dbxConnected())syncNow();});
+/* Kurzbefehle erst nach dem ersten Abgleich: sonst könnte "laut Plan" einen Eintrag vom anderen Gerät überschreiben */
+dbxHandleRedirect().then(()=>dbxConnected()?syncNow():null).then(handleShortcut);
 </script>
 </body>
 </html>
