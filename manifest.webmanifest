@@ -1,0 +1,26 @@
+{
+  "name": "AK-Zeit · Arbeitszeiterfassung",
+  "short_name": "AK-Zeit",
+  "description": "Mobile Arbeitszeiterfassung mit Schichten, Gleitzeit & Excel-Export",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080b08",
+  "theme_color": "#0a0e0a",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "id": "./"
+}
