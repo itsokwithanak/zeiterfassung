@@ -767,6 +767,10 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
       <div class="pwatxt">📱 <b>Als App installieren</b> für Offline-Nutzung & Vollbild<br><span class="pwaMini">iOS: Teilen → „Zum Home-Bildschirm" · Android: Menü → „App installieren"</span></div>
       <button class="pwaX" id="pwaDismiss" aria-label="Schließen">✕</button>
     </div>
+    <div class="pwahint" id="yearHint" style="display:none">
+      <div class="pwatxt">📅 <b id="yearHintTxt"></b><br><span class="pwaMini" id="yearHintSub"></span></div>
+      <button type="button" class="bfbtn" id="yearHintBtn">Umstellen</button>
+    </div>
     <div class="pwahint" id="bkpHint" style="display:none">
       <div class="pwatxt">💾 <b id="bkpHintTxt"></b><br><span class="pwaMini">Deine Daten liegen nur auf diesem Gerät.</span></div>
       <button type="button" class="bfbtn" id="bkpHintBtn">Sichern</button>
@@ -1149,6 +1153,8 @@ DB.plan=DB.plan||{};  /* Schichtplan: {"YYYY-MM-DD":"F"|"S"|"T"|"SP"|"Ur"} */
 DB.flagsReviewed=DB.flagsReviewed||{};  /* {"YYYY-MM-DD":true} -- Tage die als "geprüft, ist ok" bestätigt wurden */
 if(DB.settings.planName===undefined)DB.settings.planName='';
 if(DB.settings.planRow===undefined)DB.settings.planRow='';
+/* Übertrag pro Jahr (vorher ein einziger Wert settings.carry -> gilt ab jetzt nur noch fürs damals aktive Jahr) */
+if(!DB.settings.carryByYear)DB.settings.carryByYear={[DB.settings.year||2026]:DB.settings.carry||'0:00'};
 DB.meta=DB.meta||{e:{},p:{},f:{},s:0};  /* Sync: Änderungszeitstempel {e:{key:ts},p:{},f:{},s:ts} -- Tombstone = Zeitstempel ohne Wert */
 /* Sync-Zustand: muss VOR seedTemplate/persist deklariert sein (TDZ!) */
 const DBX_APPKEY='z0v40nyqr88kkz6',DBX_STORE='ak_zeit_dbx',DBX_PKCE='ak_zeit_dbx_pkce',DBX_FILE='/ak_zeit.json';
@@ -1254,15 +1260,29 @@ function minToH(m){m=Math.round(m);return Math.floor(m/60)+":"+pad(m%60);}
 function sgn(m){if(m==null)return "—";const a=Math.abs(Math.round(m));const s=m<0?"-":"+";return s+Math.floor(a/60)+":"+pad(a%60);}
 function dateKey(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
 function keyDate(k){const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d,12,0,0);}
-HOLIDAYS=computeHolidays((DB.settings&&DB.settings.year)||2026);
-HALFDAYS=computeHalfdays((DB.settings&&DB.settings.year)||2026);
+function setYearHolidays(y){
+  /* Vor-, aktives und Folgejahr: Wochen über den Jahreswechsel (KW 1/52/53) brauchen beide Seiten.
+     Wer HOLIDAYS iteriert (Excel-Export), muss selbst aufs aktive Jahr filtern. */
+  HOLIDAYS=[...computeHolidays(y-1),...computeHolidays(y),...computeHolidays(y+1)];
+  HALFDAYS=[...computeHalfdays(y-1),...computeHalfdays(y),...computeHalfdays(y+1)];
+}
+setYearHolidays((DB.settings&&DB.settings.year)||2026);
+function carryStr(y){const cb=DB.settings.carryByYear||{};return cb[y]!=null?cb[y]:'0:00';}
+function proposeCarry(y){
+  /* Übertrag für Jahr y: gespeicherter Wert, sonst (Folgejahr) der Gleitzeit-Stand Ende des aktiven Jahres */
+  const cb=DB.settings.carryByYear||{};
+  if(cb[y]!=null)return cb[y];
+  if(y!==DB.settings.year+1)return '0:00';
+  const b=runningBalanceUpTo(11);
+  return (b<0?'-':'')+minToH(Math.abs(b));
+}
 function isoWeek(d){const t=new Date(d.getFullYear(),d.getMonth(),d.getDate());const dn=(t.getDay()+6)%7;t.setDate(t.getDate()-dn+3);const f=new Date(t.getFullYear(),0,4);return 1+Math.round(((t-f)/86400000-3+((f.getDay()+6)%7))/7);}
 function isoWeeksInYear(y){const j=new Date(y,0,1).getDay();const d=new Date(y,11,31).getDay();return (j===4||d===4)?53:52;}
 function isoWeekMonday(y,w){const j4=new Date(y,0,4);const dn=j4.getDay()||7;const m=new Date(j4);m.setDate(j4.getDate()-dn+1);m.setDate(m.getDate()+(w-1)*7);return m;}
 
 /* ---------- engine (mirrors the employer sheet) ---------- */
 function dayTarget(){return Math.round((DB.settings.weekHours*60)/DB.settings.workDays);}
-function carryMin(){const s=DB.settings.carry||"0:00";const neg=s.trim().startsWith('-');const v=hToMin(s.replace('-',''))||0;return neg?-v:v;}
+function carryMin(){const s=carryStr(DB.settings.year);const neg=s.trim().startsWith('-');const v=hToMin(s.replace('-',''))||0;return neg?-v:v;}
 function breakRules(){
   const r=DB.settings.breakRules||{};
   return {M15:Math.round((r.t1||6)*60),N15:r.b1||30,M16:Math.round((r.t2||9)*60),N16:r.b2||45,fixed:!!r.fixed,fixedMin:r.fixedMin!=null?r.fixedMin:30};
@@ -2015,6 +2035,7 @@ function renderAbsence(){
 function renderDash(){
   monthSel.value=curMonth;
   document.getElementById('mcYear').textContent=DB.settings.year;
+  renderYearHint();
   renderBkpHint();
   renderTodayCard();
   renderPlanCatch();
@@ -3423,7 +3444,9 @@ document.getElementById('gearBtn').onclick=()=>{
   populateYearSelector();
   document.getElementById('setWeek').value=DB.settings.weekHours;
   document.getElementById('setDays').value=DB.settings.workDays;
-  document.getElementById('setCarry').value=DB.settings.carry||'0:00';
+  document.getElementById('setCarry').value=carryStr(DB.settings.year);
+  /* Jahr im Modal umgestellt -> Übertrag des gewählten Jahres zeigen */
+  document.getElementById('setYear').onchange=e=>{document.getElementById('setCarry').value=proposeCarry(parseInt(e.target.value));};
   document.getElementById('setForfeit').value=minToH(DB.settings.forfeitMin||0);
   document.getElementById('setUrlaub').value=DB.settings.urlaubTotal||'';
   document.getElementById('setHDDef').value=DB.settings.halfDayDefault==null?'':DB.settings.halfDayDefault;
@@ -3462,8 +3485,7 @@ function changeYear(newYear){
   if(newYear===DB.settings.year)return;
   const oldYear=DB.settings.year;
   DB.settings.year=newYear;
-  HOLIDAYS=computeHolidays(newYear);
-  HALFDAYS=computeHalfdays(newYear);
+  setYearHolidays(newYear);
   const td=new Date();
   curMonth=td.getFullYear()===newYear?td.getMonth():0;
   monthSel.innerHTML=MONTHS.map((m,i)=>`<option value="${i}">${m} ${newYear}</option>`).join('');
@@ -3486,6 +3508,24 @@ function changeYear(newYear){
   document.getElementById('rTo').value=newDefKey;
   logEvent({type:'settings',detail:`Jahr ${oldYear} → ${newYear}`});
 }
+/* Jahreswechsel-Hinweis: Kalenderjahr ist weiter als das aktive App-Jahr (Jahr ist pro Gerät, siehe SYNC_LOCAL_SET) */
+function renderYearHint(){
+  const el=document.getElementById('yearHint');if(!el)return;
+  const y=new Date().getFullYear();
+  if(y<=DB.settings.year){el.style.display='none';return;}
+  document.getElementById('yearHintTxt').textContent=`Neues Jahr – auf ${y} umstellen?`;
+  document.getElementById('yearHintSub').textContent=y===DB.settings.year+1
+    ?`Übertrag ${y}: ${proposeCarry(y)} (Gleitzeit-Stand Ende ${DB.settings.year}, in Einstellungen änderbar)`
+    :`Aktuell angezeigt: ${DB.settings.year}`;
+  el.style.display='flex';
+}
+document.getElementById('yearHintBtn').onclick=()=>{
+  const y=new Date().getFullYear();
+  if(DB.settings.carryByYear[y]==null)DB.settings.carryByYear=Object.assign({},DB.settings.carryByYear,{[y]:proposeCarry(y)});
+  changeYear(y);
+  persist();renderDash();
+  toast(`✓ Auf ${y} umgestellt · Übertrag ${carryStr(y)}`);
+};
 document.getElementById('setX').onclick=()=>setModal.classList.remove('on');
 setModal.onclick=e=>{if(e.target===setModal)setModal.classList.remove('on');};
 document.getElementById('setHDApply').onclick=()=>{
@@ -3508,13 +3548,14 @@ document.getElementById('setHDApply').onclick=()=>{
   toast(`✓ 24./31.12.${y} ${labels}`);
 };
 document.getElementById('setSave').onclick=()=>{
-  const before={w:DB.settings.weekHours,d:DB.settings.workDays,c:DB.settings.carry,u:DB.settings.urlaubTotal,y:DB.settings.year,f:DB.settings.forfeitMin};
+  const before={w:DB.settings.weekHours,d:DB.settings.workDays,u:DB.settings.urlaubTotal,y:DB.settings.year,f:DB.settings.forfeitMin};
   const newYear=parseInt(document.getElementById('setYear').value)||DB.settings.year;
   if(newYear!==DB.settings.year)changeYear(newYear);
+  const prevCarry=carryStr(DB.settings.year);  /* Übertrag-Feld gehört zum (ggf. neu gewählten) Jahr */
   DB.settings.weekHours=parseFloat(document.getElementById('setWeek').value)||40;
   DB.settings.workDays=parseInt(document.getElementById('setDays').value)||5;
   let c=document.getElementById('setCarry').value.trim()||'0:00';if(!/^-?\d+:\d{2}$/.test(c))c='0:00';
-  DB.settings.carry=c;
+  DB.settings.carryByYear=Object.assign({},DB.settings.carryByYear,{[DB.settings.year]:c});
   let fStr=document.getElementById('setForfeit').value.trim()||'0:00';
   if(!/^\d+:\d{2}$/.test(fStr))fStr='0:00';
   DB.settings.forfeitMin=hToMin(fStr)||0;
@@ -3538,7 +3579,7 @@ document.getElementById('setSave').onclick=()=>{
   const diffs=[];
   if(before.w!==DB.settings.weekHours)diffs.push(`Sollzeit/W: ${before.w}→${DB.settings.weekHours}h`);
   if(before.d!==DB.settings.workDays)diffs.push(`Arbeitstage: ${before.d}→${DB.settings.workDays}`);
-  if(before.c!==DB.settings.carry)diffs.push(`Übertrag: ${before.c}→${DB.settings.carry}`);
+  if(prevCarry!==c)diffs.push(`Übertrag ${DB.settings.year}: ${prevCarry}→${c}`);
   if((before.f||0)!==DB.settings.forfeitMin)diffs.push(`Verfall-Grenze: ${minToH(before.f||0)}→${minToH(DB.settings.forfeitMin)}`);
   if((before.u||0)!==DB.settings.urlaubTotal)diffs.push(`Urlaubsanspruch: ${before.u||0}→${DB.settings.urlaubTotal}`);
   if(diffs.length)logEvent({type:'settings',detail:diffs.join(' · ')});
@@ -3825,8 +3866,8 @@ function importBackup(file){
       DB.plan=data.plan||{};
       DB.flagsReviewed=data.flagsReviewed||{};
       /* Jahr aus der Sicherung kann vom aktuellen abweichen -> Feiertage, Monats-/KW-Auswahl nachziehen */
-      HOLIDAYS=computeHolidays(DB.settings.year);
-      HALFDAYS=computeHalfdays(DB.settings.year);
+      if(!DB.settings.carryByYear)DB.settings.carryByYear={[DB.settings.year]:DB.settings.carry||'0:00'};  /* alte Sicherung ohne Übertrag pro Jahr */
+      setYearHolidays(DB.settings.year);
       monthSel.innerHTML=MONTHS.map((m,i)=>`<option value="${i}">${m} ${DB.settings.year}</option>`).join('');
       buildKW();
       applyTheme(DB.settings.theme||'dark');
@@ -3834,7 +3875,7 @@ function importBackup(file){
       /* Settings-Modal-Inputs aktualisieren */
       document.getElementById('setWeek').value=DB.settings.weekHours;
       document.getElementById('setDays').value=DB.settings.workDays;
-      document.getElementById('setCarry').value=DB.settings.carry||'0:00';
+      document.getElementById('setCarry').value=carryStr(DB.settings.year);
       document.getElementById('setUrlaub').value=DB.settings.urlaubTotal||'';
       /* Alles neu rendern */
       curMonth=Math.min(Math.max(curMonth,0),11);
