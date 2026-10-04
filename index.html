@@ -105,6 +105,8 @@ button.ghost{background:transparent;border:1px solid var(--line2);color:var(--mu
 .note b{color:var(--neon-soft);font-weight:600}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom));background:var(--panel2);border:1px solid var(--neon-dim);color:var(--ink);padding:11px 18px;border-radius:12px;font-size:13.5px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;box-shadow:0 0 24px rgba(61,255,119,.25);max-width:90%;text-align:center}
 .toast.show{opacity:1}
+.toast.show.hasundo{pointer-events:auto;display:flex;align-items:center;gap:14px;padding:6px 6px 6px 18px}
+.toastundo{background:var(--neon);color:var(--bg);border:0;border-radius:9px;min-height:40px;padding:0 14px;font-family:var(--mono);font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap}
 /* Summary numbers */
 .sumgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--line);border-radius:12px;overflow:hidden;border:1px solid var(--line)}
 .sumcell{background:var(--panel2);padding:14px 8px;text-align:center}
@@ -338,7 +340,9 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .pr-dot{width:9px;height:9px;border-radius:50%;background:var(--neon);animation:prpulse 1.6s ease-in-out infinite}
 @keyframes prpulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(61,255,119,.5)}50%{opacity:.6;box-shadow:0 0 0 6px rgba(61,255,119,0)}}
 .pr-sug{color:var(--mut);font-size:11.5px}
-.pr-elapsed{font-family:var(--mono);font-size:34px;font-weight:700;color:var(--neon);margin:8px 0 14px;letter-spacing:1px}
+.pr-elapsed{font-family:var(--mono);font-size:34px;font-weight:700;color:var(--neon);margin:8px 0 6px;letter-spacing:1px}
+.pr-end{font-family:var(--mono);font-size:12.5px;color:var(--mut);margin:0 0 14px;min-height:1.2em}
+.pr-end b{color:var(--ink)}
 .punchout{background:var(--amber);color:var(--bg);font-weight:700}
 .punchout:active{transform:scale(.97)}
 .fgbox{background:rgba(255,194,77,.06);border:1px solid rgba(255,194,77,.3);border-radius:11px;padding:12px}
@@ -427,6 +431,18 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .pcday{background:var(--bg2);border:1px solid rgba(255,194,77,.35);border-radius:8px;padding:6px 10px;font-family:var(--mono);font-size:11.5px;color:var(--ink);cursor:pointer;display:flex;gap:6px;align-items:baseline}
 .pcday:active{transform:scale(.94)}
 .pcday .pcc{font-weight:700;color:var(--amber)}
+/* Wochenmeldung (Stunden übertragen?) */
+.wdrow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.wdrow:last-of-type{border-bottom:0}
+.wdinfo{display:flex;flex-direction:column;font-family:var(--mono)}
+.wdinfo b{font-size:13px;color:var(--ink)}
+.wdinfo span{font-size:11px;color:var(--mut)}
+.wdnet{font-family:var(--mono);font-size:17px;font-weight:700;text-align:right;display:flex;flex-direction:column;line-height:1.1}
+.wdnet small{font-size:9.5px;font-weight:400;color:var(--mut);letter-spacing:.5px;text-transform:uppercase}
+.wdok{min-height:40px;padding:0 12px;border-radius:9px;background:rgba(61,255,119,.1);border:1px solid var(--neon-dim);color:var(--neon-soft);font-family:var(--mono);font-size:11.5px;font-weight:700;cursor:pointer}
+.wdok:active{background:var(--neon);color:var(--bg)}
+.otdone{min-height:36px;padding:0 10px;border-radius:8px;background:transparent;border:1px dashed var(--line2);color:var(--mut);font-family:var(--mono);font-size:11px;cursor:pointer}
+.otdone.on{border-style:solid;border-color:var(--neon-dim);color:var(--neon-soft);background:rgba(61,255,119,.07)}
 /* Zu-prüfen Liste */
 .flitem{background:var(--bg2);border:1px solid rgba(255,194,77,.3);border-radius:10px;padding:10px 11px;margin-bottom:8px}
 .flitem:last-child{margin-bottom:0}
@@ -629,18 +645,22 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
 <main class="wrap">
 
   <!-- EINGABE -->
-  <section class="view on" id="v-input">
+  <section class="view" id="v-input">
     <h2 class="vt">Eingabe</h2>
     <div class="backfill-banner" id="bfBanner" style="display:none">
       <div class="bftxt"><b id="bfCount">0</b> Werktage ohne Eintrag bis heute</div>
       <button type="button" class="bfbtn" id="bfStart">Nachtragen →</button>
     </div>
     <div class="seg" id="modeSeg">
-      <button data-mode="single" class="on">Tag</button>
-      <button data-mode="range">Zeitraum</button>
-      <button data-mode="shift">KW-Plan</button>
-      <button data-mode="plan">Plan</button>
-      <button data-mode="import">Import</button>
+      <button data-mode="entry" class="on">Eintragen</button>
+      <button data-mode="plan">Dienstplan</button>
+      <button data-mode="import">Ist-Import</button>
+    </div>
+
+    <div id="entryWrap">
+    <div class="seg" id="entrySeg" style="margin-bottom:12px">
+      <button data-sub="single" class="on">Ein Tag</button>
+      <button data-sub="range">Zeitraum</button>
     </div>
 
     <div class="card" id="singleCard">
@@ -696,37 +716,56 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
       <div class="hint">Trägt dieselbe Zeit oder Art (z.B. Urlaub) für jeden Tag ein. Feiertage und ½-Tage werden geschützt.</div>
     </div>
 
-    <div class="card" id="shiftCard" style="display:none">
-      <div class="plantag">📋 Plan-Eingabe — trägt keine Ist-Zeit ein</div>
-      <div id="calShift"></div>
-      <div class="field" style="margin-top:4px"><label class="fl">Kalenderwoche</label><select id="kwSel"></select></div>
-      <div class="cap" style="margin:6px 2px 10px">Schicht antippen → ganze KW wird als Plan gesetzt</div>
-      <div class="shiftbtns">
-        <button class="shiftbtn" data-sh="frueh"><div class="shln">▸ Frühschicht</div><div class="shtm">Mo–Fr · 06:00 – 14:30</div></button>
-        <button class="shiftbtn" data-sh="tag"><div class="shln">▸ Tagschicht</div><div class="shtm">Mo–Fr · 06:30 – 15:00</div></button>
-        <button class="shiftbtn" data-sh="spaet"><div class="shln">▸ Spätschicht</div><div class="shtm">Mo–Do · 13:30 – 22:00<br>Fr&nbsp;&nbsp;&nbsp;· 11:30 – 20:00</div></button>
-      </div>
-      <div class="hint">Setzt den <b>Plan</b> für die ganze Woche (wie im Plan-Reiter). Feiertage/½-Tage werden übersprungen. Bestätigt wird der Tag später über die Heute-Karte oder den Nachtrag-Assistenten — hier passiert noch kein Ist-Eintrag.</div>
-    </div>
+    </div><!-- /entryWrap -->
 
     <div class="card" id="planCard" style="display:none">
+      <div class="plantag">📋 Dienstplan — trägt keine Ist-Zeit ein</div>
       <div class="field"><label class="fl">Monat</label><select id="planMonth"></select></div>
-      <div class="cap" style="margin:4px 2px 8px">Code wählen, dann Tage antippen · KW-Label = ganze Woche</div>
-      <div class="plpal" id="planPal">
-        <button data-pc="F" class="on">F</button>
-        <button data-pc="S">S</button>
-        <button data-pc="T">T</button>
-        <button data-pc="SP">SP</button>
-        <button data-pc="Ur">Ur</button>
-        <button data-pc="">✕</button>
+      <div class="seg" id="planSeg" style="margin-bottom:12px">
+        <button data-ps="pick" class="on">Auswahl</button>
+        <button data-ps="text">Text</button>
+        <button data-ps="photo">Foto</button>
       </div>
+
+      <div id="planPickPane">
+        <div class="cap" style="margin:0 2px 8px">Code wählen, dann Tage antippen · KW-Label = ganze Woche</div>
+        <div class="plpal" id="planPal">
+          <button data-pc="F" class="on">F</button>
+          <button data-pc="S">S</button>
+          <button data-pc="T">T</button>
+          <button data-pc="SP">SP</button>
+          <button data-pc="Ur">Ur</button>
+          <button data-pc="">✕</button>
+        </div>
+      </div>
+
+      <div id="planTextPane" style="display:none">
+        <div class="imphint">Codes <b>der Reihe nach</b> (für die Werktage des Monats) oder <b>Datum + Code</b>, eine Zeile je Eintrag:<br><code>F F S S T Ur</code> · <code>05.10. S</code> · <code>05.10.–09.10. F</code> · <code>2026-10-12 Urlaub</code></div>
+        <textarea id="planText" class="imptxt" rows="5" placeholder="F F F F F
+S S S S S
+T T Ur Ur F"></textarea>
+        <button class="act ghost" id="planTextApply" style="margin-top:10px">In Vorschau übernehmen</button>
+        <div class="plstatus" id="planTextStatus" style="display:none"></div>
+      </div>
+
+      <div id="planPhotoPane" style="display:none">
+        <div class="field"><label class="fl">Dein Name im Dienstplan</label><input type="text" id="planNameIn" placeholder="z.B. Beier"></div>
+        <div class="field"><label class="fl">Zeilen-Position (Fallback)</label><input type="text" id="planRowIn" placeholder="z.B. -2 für vorletzte Zeile" inputmode="numeric"></div>
+        <div class="note" style="font-size:11.5px;margin:0 0 12px">Der Foto-Import sucht zuerst deinen Namen. Wird er nicht erkannt, greift die Positions-Angabe: positive Zahl = von oben, negativ = von unten (-1 = letzte, -2 = vorletzte Zeile).</div>
+        <input type="file" id="planPhoto" accept="image/*" style="display:none">
+        <button class="act ghost" id="planPhotoBtn" style="margin:0;padding:10px">📷 Dienstplan-Foto einlesen</button>
+        <div class="plstatus" id="planStatus" style="display:none"></div>
+      </div>
+
+      <div class="cap" style="margin:16px 2px 8px">Vorschau · gestrichelt = unsicher, bitte prüfen</div>
       <div id="planGrid"></div>
       <button class="act" id="planSave" style="margin-top:12px">Plan speichern</button>
       <button class="act ghost" id="planClear" style="margin-top:8px;font-size:11.5px;padding:8px">Plan für diesen Monat löschen</button>
-      <div class="hint">Der Plan ist nur eine Vorlage — die Heute-Karte fragt dich täglich zur Bestätigung. Ist-Einträge werden nie automatisch erzeugt. Foto-Import: Einstellungen → Dienstplan-Import.</div>
+      <div class="hint">Der Plan ist nur eine Vorlage — die Heute-Karte fragt dich täglich zur Bestätigung. Ist-Einträge werden nie automatisch erzeugt. Eine ganze Woche setzt du, indem du einen Code wählst und das KW-Label antippst.</div>
     </div>
 
     <div class="card" id="importCard" style="display:none">
+      <div class="plantag">📝 Ist-Import — tatsächliche Zeiten und Abwesenheiten (kein Dienstplan)</div>
       <div class="imphint">Ein Eintrag pro Zeile: <code>DATUM ZEIT ZEIT</code> oder <code>DATUM KATEGORIE</code></div>
       <textarea id="impText" class="imptxt" rows="10" placeholder="2026-01-05 06:00 14:30
 2026-01-06 Urlaub
@@ -751,7 +790,7 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
   </section>
 
   <!-- ÜBERSICHT -->
-  <section class="view" id="v-dash">
+  <section class="view on" id="v-dash">
     <div class="pwahint" id="pwaHint" style="display:none">
       <div class="pwatxt">📱 <b>Als App installieren</b> für Offline-Nutzung & Vollbild<br><span class="pwaMini">iOS: Teilen → „Zum Home-Bildschirm" · Android: Menü → „App installieren"</span></div>
       <button class="pwaX" id="pwaDismiss" aria-label="Schließen">✕</button>
@@ -786,6 +825,14 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
         <span class="pccount" id="flCount"></span>
       </div>
       <div id="flList"></div>
+    </div>
+    <div class="card" id="weekDoneCard" style="display:none">
+      <div class="pchdr">
+        <span class="pclbl">⏱ STUNDEN ÜBERTRAGEN?</span>
+        <span class="pccount" id="wdCount"></span>
+      </div>
+      <div id="wdList"></div>
+      <button type="button" class="act ghost" id="wdAll" style="margin-top:8px;font-size:11.5px;padding:9px">Alle als übertragen markieren</button>
     </div>
     <div class="card" id="weekLive" style="display:none">
       <div class="wlhdr">
@@ -934,8 +981,8 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
 </main>
 
 <nav>
-  <button data-view="v-input" class="on"><span class="ic">⌨</span>Eingabe</button>
-  <button data-view="v-dash"><span class="ic">▦</span>Übersicht</button>
+  <button data-view="v-input"><span class="ic">⌨</span>Eingabe</button>
+  <button data-view="v-dash" class="on"><span class="ic">▦</span>Übersicht</button>
   <button data-view="v-ot"><span class="ic">▲</span>Überstd.</button>
   <button data-view="v-export"><span class="ic">⤓</span>Export</button>
   <button data-view="v-log"><span class="ic">📜</span>Verlauf</button>
@@ -967,6 +1014,8 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
           <div class="field"><label class="fl">Sollzeit / Woche (Std)</label><input type="number" id="setWeek" step="0.25" min="0"></div>
           <div class="field"><label class="fl">Arbeitstage / Woche</label><input type="number" id="setDays" step="1" min="1" max="7"></div>
         </div>
+        <div class="field"><label class="fl">Erfassung ab <span class="flopt">– optional, z.B. Arbeitsbeginn</span></label><input type="date" id="setTrackFrom"></div>
+        <div class="note" style="font-size:11.5px;margin:0 0 12px">Werktage davor zählen nicht als „ohne Eintrag" (Nachtrag-Hinweis). Leer = ab 1. Januar.</div>
         <div class="field"><label class="fl">Übertrag Vorjahr (z.B. -2:30)</label><input type="text" id="setCarry" placeholder="0:00" inputmode="text"></div>
         <div class="note" style="font-size:11.5px;margin:0">Sollzeit/Tag = Wochensoll ÷ Arbeitstage. Muss zu deiner „Übersicht" im Excel passen (Standard 40h / 5 = 8:00).</div>
       </div>
@@ -1012,18 +1061,6 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
           </select>
         </div>
         <button class="act ghost" id="setHDApply" style="margin:0;font-size:11.5px;padding:8px">Standard auf 24./31.12. {jahr} anwenden</button>
-      </div>
-    </details>
-
-    <details class="sdsec">
-      <summary>📋 Dienstplan-Import (Foto)</summary>
-      <div class="sdbody">
-        <div class="field" style="margin-top:10px"><label class="fl">Dein Name im Dienstplan</label><input type="text" id="setPlanName" placeholder="z.B. Beier"></div>
-        <div class="field"><label class="fl">Zeilen-Position (Fallback)</label><input type="text" id="setPlanRow" placeholder="z.B. -2 für vorletzte Zeile" inputmode="numeric"></div>
-        <div class="note" style="font-size:11.5px;margin:0 0 12px">Der Foto-Import sucht zuerst deinen Namen. Wird er nicht erkannt, greift die Positions-Angabe: positive Zahl = von oben, negativ = von unten (-1 = letzte, -2 = vorletzte Zeile).</div>
-        <input type="file" id="planPhoto" accept="image/*" style="display:none">
-        <button class="act ghost" id="planPhotoBtn" style="margin:0;padding:10px">📷 Dienstplan-Foto einlesen</button>
-        <div class="plstatus" id="planStatus" style="display:none"></div>
       </div>
     </details>
 
@@ -1150,7 +1187,12 @@ if(DB.settings.planName===undefined)DB.settings.planName='';
 if(DB.settings.planRow===undefined)DB.settings.planRow='';
 /* Übertrag pro Jahr (vorher ein einziger Wert settings.carry -> gilt ab jetzt nur noch fürs damals aktive Jahr) */
 if(!DB.settings.carryByYear)DB.settings.carryByYear={[DB.settings.year||2026]:DB.settings.carry||'0:00'};
-DB.meta=DB.meta||{e:{},p:{},f:{},s:0};  /* Sync: Änderungszeitstempel {e:{key:ts},p:{},f:{},s:ts} -- Tombstone = Zeitstempel ohne Wert */
+/* Synchronisierte Key->Wert-Verzeichnisse: [Kürzel in DB.meta, Feldname in DB]. Neues Verzeichnis = hier eintragen, sonst nichts. */
+const SYNC_MAPS=[['e','entries'],['p','plan'],['f','flagsReviewed'],['w','weekDone']];
+DB.weekDone=DB.weekDone||{};  /* {"YYYY-MM-DD"(Montag):true} -- Wochen, deren Plus/Minus-Stunden schon übertragen sind */
+function freshMeta(){const m={s:0};SYNC_MAPS.forEach(([k])=>{m[k]={};});return m;}
+DB.meta=DB.meta||freshMeta();  /* Sync: Änderungszeitstempel {e:{key:ts},p:{},f:{},w:{},s:ts,…} -- Tombstone = Zeitstempel ohne Wert */
+SYNC_MAPS.forEach(([k])=>{DB.meta[k]=DB.meta[k]||{};});
 /* Sync-Zustand: muss VOR seedTemplate/persist deklariert sein (TDZ!) */
 const DBX_APPKEY='z0v40nyqr88kkz6',DBX_STORE='ak_zeit_dbx',DBX_PKCE='ak_zeit_dbx_pkce',DBX_FILE='/ak_zeit.json';
 const SYNC_LOCAL_SET=['theme','pwaHintDismissed','lastBackupTs','year'];  /* geräteabhängige Settings: nie synchronisieren */
@@ -1189,14 +1231,26 @@ function logEvent(ev){
    persist() + Re-Render macht der Aufrufer (Bulk-Pfade loggen selbst als 'bulk'). */
 function setEntry(k,e){
   const prev=DB.entries[k];DB.entries[k]=e;delete DB.flagsReviewed[k];
-  logEvent({type:prev?'update':'create',k,val:e,prev});
+  const ev={type:prev?'update':'create',k,val:e,prev};logEvent(ev);
+  return {k,prev,ts:ev.ts};  /* Undo-Token für undoEntry() */
 }
 function deleteEntry(k){
   const prev=DB.entries[k];if(!prev)return null;
   delete DB.entries[k];delete DB.flagsReviewed[k];
-  logEvent({type:'delete',k,prev});
-  return prev;
+  const ev={type:'delete',k,prev};logEvent(ev);
+  return {k,prev,ts:ev.ts};
 }
+function undoEntry(tok){
+  /* Macht setEntry/deleteEntry rückgängig: Vorwert zurück, das zugehörige Verlaufs-Event verschwindet wieder */
+  if(!tok)return;
+  const i=DB.log.findIndex(e=>e.ts===tok.ts);if(i>-1)DB.log.splice(i,1);
+  if(tok.prev)DB.entries[tok.k]=tok.prev;else delete DB.entries[tok.k];
+  delete DB.flagsReviewed[tok.k];
+  persist();renderDash();refreshCals();
+  if(document.getElementById('sDate').value===tok.k){loadSingle();liveSingle();}
+  toast('↶ Rückgängig gemacht');
+}
+const undoer=tok=>tok?()=>undoEntry(tok):null;
 /* einmaliges Übernehmen der Vorbelegungen aus der Vorlage: Heiligabend & Silvester = Ausgleichszeit */
 (function seedTemplate(){
   if(DB.settings.seeded) return;
@@ -1265,10 +1319,6 @@ function fillShiftLabels(){
   const both=(id,sep)=>{const a=shiftTxt(id,1),f=shiftTxt(id,5);return a===f?a:`${a}${sep}Fr ${f}`;};
   document.querySelectorAll('#sQuickShifts .qsh').forEach(b=>b.querySelector('.qshtm').textContent=shiftTxt(b.dataset.sh,1));
   document.querySelectorAll('#rQuickShifts .qsh').forEach(b=>b.querySelector('.qshtm').textContent=both(b.dataset.sh,'\n'));
-  document.querySelectorAll('#shiftCard .shiftbtn').forEach(b=>{
-    const a=shiftTxt(b.dataset.sh,1),f=shiftTxt(b.dataset.sh,5);
-    b.querySelector('.shtm').textContent=a===f?`Mo–Fr · ${a}`:`Mo–Do · ${a}\nFr · ${f}`;
-  });
   document.querySelectorAll('#bfModal .bfopt').forEach(b=>{const m=b.querySelector('.bfoptm');if(m&&shiftTimes(b.dataset.bf,1))m.textContent=shiftTxt(b.dataset.bf,1);});
   const h=document.getElementById('rShiftHint');if(h)h.textContent=`Schicht direkt eintragen · Fr-Spät ${shiftTxt('spaet',5)} · WE/Feiertage skip`;
 }
@@ -1309,7 +1359,6 @@ function proposeCarry(y){
   return (b<0?'-':'')+minToH(Math.abs(b));
 }
 function isoWeek(d){const t=new Date(d.getFullYear(),d.getMonth(),d.getDate());const dn=(t.getDay()+6)%7;t.setDate(t.getDate()-dn+3);const f=new Date(t.getFullYear(),0,4);return 1+Math.round(((t-f)/86400000-3+((f.getDay()+6)%7))/7);}
-function isoWeeksInYear(y){const j=new Date(y,0,1).getDay();const d=new Date(y,11,31).getDay();return (j===4||d===4)?53:52;}
 function isoWeekMonday(y,w){const j4=new Date(y,0,4);const dn=j4.getDay()||7;const m=new Date(j4);m.setDate(j4.getDate()-dn+1);m.setDate(m.getDate()+(w-1)*7);return m;}
 /* Montag der Woche von d. Für "Woche dieses Datums" immer DIESE Funktion nehmen:
    isoWeekMonday(Kalenderjahr, isoWeek(d)) ist am Jahreswechsel falsch (1.1.2027 liegt in KW 53/2026). */
@@ -1507,7 +1556,7 @@ function makeCal(id, mode, opts){
   };
 }
 
-/* Init der 3 Kalender — sDate/rFrom/rTo/kwSel bleiben als hidden Sync-Felder */
+/* Init der 2 Kalender — sDate/rFrom/rTo sind versteckte Felder, über die die Formulare den gewählten Tag/Zeitraum lesen */
 const calTag=makeCal('calTag','single',{selection:defKey,onSelect:k=>{
   document.getElementById('sDate').value=k;loadSingle();liveSingle();
 }});
@@ -1515,17 +1564,21 @@ const calRange=makeCal('calRange','range',{selection:{from:defKey,to:defKey},onS
   document.getElementById('rFrom').value=sel.from||'';
   document.getElementById('rTo').value=sel.to||sel.from||'';
 }});
-/* Shift: defaults to current ISO week */
-const _todayMon=(()=>{const d=new Date();const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow);return d;})();
-const calShift=makeCal('calShift','week',{
-  selection:{monday:dateKey(_todayMon),week:isoWeek(_todayMon)},
-  onSelect:sel=>{document.getElementById('kwSel').value=sel.week;}
-});
 
 /* ---------- toast ---------- */
 let tT;
-function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');
-  if(/^[✓■▶☁↶]/.test(m)&&navigator.vibrate){try{navigator.vibrate(12);}catch(e){}}  /* kurzes Feedback am Handy bei Erfolg */clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),1900);}
+function toast(m,undo){
+  /* undo: optionaler Rückgängig-Knopf (6 s sichtbar statt 1,9 s) */
+  const t=document.getElementById('toast');t.textContent=m;
+  if(undo){
+    const b=document.createElement('button');b.type='button';b.className='toastundo';b.textContent='Rückgängig';
+    b.onclick=()=>{clearTimeout(tT);t.classList.remove('show');undo();};
+    t.appendChild(b);
+  }
+  t.classList.toggle('hasundo',!!undo);t.classList.add('show');
+  if(/^[✓■▶☁↶]/.test(m)&&navigator.vibrate){try{navigator.vibrate(12);}catch(e){}}  /* kurzes Feedback am Handy bei Erfolg */
+  clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),undo?6000:1900);
+}
 
 /* ---------- nav ---------- */
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
@@ -1538,32 +1591,29 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   if(b.dataset.view==='v-export')updateExportState();
 });
 
-/* ---------- Eingabe: mode toggle ---------- */
-document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>{
-  /* Aktuell sichtbaren Monat vom Vor-Modus holen damit beim Wechsel der Kontext bleibt */
-  const oldActive=document.querySelector('#modeSeg button.on');
-  const oldMode=oldActive?oldActive.dataset.mode:null;
-  let ym=null;
-  if(oldMode==='single'&&typeof calTag!=='undefined'&&calTag)ym=calTag.getYearMonth();
-  else if(oldMode==='range'&&typeof calRange!=='undefined'&&calRange)ym=calRange.getYearMonth();
-  else if(oldMode==='shift'&&typeof calShift!=='undefined'&&calShift)ym=calShift.getYearMonth();
-
-  document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
-  const m=b.dataset.mode;
-  document.getElementById('singleCard').style.display=m==='single'?'':'none';
-  document.getElementById('rangeCard').style.display=m==='range'?'':'none';
-  document.getElementById('shiftCard').style.display=m==='shift'?'':'none';
+/* ---------- Eingabe: Modi ----------
+   Oben: Eintragen | Dienstplan | Ist-Import. Unter "Eintragen" wechselt ein zweiter Schalter zwischen Ein Tag und Zeitraum. */
+let entrySub='single';
+function showMode(m){
+  document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.mode===m));
+  document.getElementById('entryWrap').style.display=m==='entry'?'':'none';
   document.getElementById('planCard').style.display=m==='plan'?'':'none';
   document.getElementById('importCard').style.display=m==='import'?'':'none';
   if(m==='plan')renderPlanGrid();
-
-  /* Monat auf den neuen Kalender übertragen, Selection beibehalten */
-  if(ym&&oldMode!==m){
-    if(m==='single'&&calTag)calTag.setYearMonth(ym.year,ym.month,true);
-    else if(m==='range'&&calRange)calRange.setYearMonth(ym.year,ym.month,true);
-    else if(m==='shift'&&calShift)calShift.setYearMonth(ym.year,ym.month,true);
+}
+function showEntrySub(s){
+  /* Monat des bisher sichtbaren Kalenders auf den neuen übertragen, damit der Kontext bleibt */
+  if(s!==entrySub){
+    const from=entrySub==='single'?calTag:calRange,to=s==='single'?calTag:calRange;
+    const ym=from.getYearMonth();to.setYearMonth(ym.year,ym.month,true);
   }
-});
+  entrySub=s;
+  document.querySelectorAll('#entrySeg button').forEach(x=>x.classList.toggle('on',x.dataset.sub===s));
+  document.getElementById('singleCard').style.display=s==='single'?'':'none';
+  document.getElementById('rangeCard').style.display=s==='range'?'':'none';
+}
+document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>showMode(b.dataset.mode));
+document.querySelectorAll('#entrySeg button').forEach(b=>b.onclick=()=>showEntrySub(b.dataset.sub));
 function toggleTimes(catEl,timesEl){
   const show=catDef(catEl.value).times;
   timesEl.style.display=show?'':'none';
@@ -1672,12 +1722,12 @@ document.getElementById('pfApply').onclick=()=>{
   document.getElementById('sG').value=gg;
   toggleTimes(sCat,sTimes);
   /* Direkt speichern */
-  setEntry(k,val);
+  const tok=setEntry(k,val);
   persist();
   refreshCals();
   loadSingle();liveSingle();
   box.style.display='none';
-  toast(`✓ Übernommen: ${kk}–${gg}`);
+  toast(`✓ Übernommen: ${kk}–${gg}`,undoer(tok));
 };
 document.getElementById('pfDismiss').onclick=()=>{
   prefillDismissed=document.getElementById('sDate').value;
@@ -1725,16 +1775,16 @@ document.getElementById('sSave').onclick=()=>{
   const pVal=document.getElementById('sPause').value;
   if(pVal!==''&&cd.times){const pNum=parseInt(pVal);if(!isNaN(pNum)&&pNum>=0)e.pauseOverride=pNum;}
   if(sCat.value==='Arbeit'&&!confirm48h({[k]:e}))return;
-  setEntry(k,e);  /* hebt auch den "geprüft"-Status auf -- wird bei Bedarf neu geflaggt */
-  persist();toast('✓ '+WD[keyDate(k).getDay()]+'. '+keyDate(k).toLocaleDateString('de-DE')+' gespeichert');
+  const tok=setEntry(k,e);  /* hebt auch den "geprüft"-Status auf -- wird bei Bedarf neu geflaggt */
+  persist();toast('✓ '+WD[keyDate(k).getDay()]+'. '+keyDate(k).toLocaleDateString('de-DE')+' gespeichert',undoer(tok));
   loadSingle();liveSingle();
   refreshCals();
   renderFlagCatch&&renderFlagCatch();
 };
 document.getElementById('sDel').onclick=()=>{
   const k=document.getElementById('sDate').value;
-  deleteEntry(k);
-  persist();toast('Eintrag gelöscht');loadSingle();liveSingle();
+  const tok=deleteEntry(k);
+  persist();toast('Eintrag gelöscht',undoer(tok));loadSingle();liveSingle();
   refreshCals();
 };
 
@@ -1764,42 +1814,7 @@ document.getElementById('rSave').onclick=()=>{
   requestFill(targets,sk,'Zeitraum');
 };
 
-/* ---------- Schicht-Quick (KW + Schicht) ---------- */
-function buildKW(){
-  const y=DB.settings.year,total=isoWeeksInYear(y),opts=[];
-  for(let w=1;w<=total;w++){
-    const m=isoWeekMonday(y,w),f=new Date(m);f.setDate(m.getDate()+4);
-    opts.push(`<option value="${w}">KW ${pad(w)} · ${pad(m.getDate())}.${pad(m.getMonth()+1)}.–${pad(f.getDate())}.${pad(f.getMonth()+1)}.</option>`);
-  }
-  const sel=document.getElementById('kwSel');sel.innerHTML=opts.join('');
-  const td=new Date();if(td.getFullYear()===y){const w=isoWeek(td);if(w>=1&&w<=total)sel.value=w;}
-  /* kwSel → calShift sync (onchange ersetzt jeden vorherigen Listener bei rebuild) */
-  sel.onchange=()=>{
-    const w=parseInt(sel.value);const mon=isoWeekMonday(y,w);
-    calShift&&calShift.setSelection({monday:dateKey(mon),week:w});
-  };
-}
-buildKW();
-function applyShift(week,shiftId){
-  /* Schreibt eine ganze KW als PLAN (nicht Ist!) — Code-Mapping: SHIFTS-id → Plan-Code */
-  const codeMap={frueh:'F',tag:'T',spaet:'S'};
-  const code=codeMap[shiftId];if(!code)return;
-  const sh=SHIFTS.find(s=>s.id===shiftId);if(!sh)return;
-  const y=DB.settings.year,mon=isoWeekMonday(y,week);
-  let n=0,sk=0;
-  for(let i=0;i<5;i++){
-    const day=new Date(mon);day.setDate(mon.getDate()+i);
-    if(day.getFullYear()!==y){sk++;continue;}
-    const dk=dateKey(day);
-    if(HOLIDAYS.includes(dk)||HALFDAYS.includes(dk)){sk++;continue;}
-    DB.plan[dk]=code;n++;
-  }
-  logEvent({type:'settings',detail:`KW-Plan ${pad(week)}: ${sh.label} (${n} Tage)`});
-  persist();
-  refreshCals();
-  renderTodayCard();renderPlanCatch&&renderPlanCatch();
-  toast(`✓ KW ${pad(week)} als ${sh.label} geplant · ${n} Tage${sk?` · ${sk} übersprungen`:''}`);
-}
+/* ---------- Schicht-Quick (Zeitraum) ---------- */
 function quickShiftRange(from,to,shiftId){
   /* Schicht-Buttons in Zeitraum-Modus: pro Tag korrekte Zeiten (Spät: Fr abweichend) */
   const sh=SHIFTS.find(s=>s.id===shiftId);if(!sh)return;
@@ -1817,9 +1832,6 @@ function quickShiftRange(from,to,shiftId){
   const fLbl=`${pad(fd.getDate())}.${pad(fd.getMonth()+1)}.–${pad(td.getDate())}.${pad(td.getMonth()+1)}.`;
   requestFill(targets,sk,`${sh.label} · ${fLbl}`);
 }
-document.querySelectorAll('#shiftCard .shiftbtn').forEach(b=>b.onclick=()=>{
-  applyShift(parseInt(document.getElementById('kwSel').value),b.dataset.sh);
-});
 document.querySelectorAll('#rQuickShifts .qsh').forEach(b=>b.onclick=()=>{
   quickShiftRange(document.getElementById('rFrom').value,document.getElementById('rTo').value,b.dataset.sh);
 });
@@ -2057,6 +2069,7 @@ function renderDash(){
   renderTodayCard();
   renderPlanCatch();
   renderFlagCatch();
+  renderWeekDone();
   renderWeekLive();
   const keys=monthEntries(curMonth);
   let sumIst=0,sumSoll=0,sumDiff=0;
@@ -2103,11 +2116,8 @@ function renderDash(){
   wrap.innerHTML=html;
   wrap.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openDay(b.dataset.edit));
   wrap.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
-    const k=b.dataset.del;const prev=DB.entries[k];if(!prev)return;
-    const d=keyDate(k);
-    if(!confirm(`${WD[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}. löschen?\n${fmtEntry(prev)}`))return;
-    deleteEntry(k);
-    persist();renderDash();refreshCals();toast('Eintrag gelöscht');
+    const tok=deleteEntry(b.dataset.del);if(!tok)return;
+    persist();renderDash();refreshCals();toast('Eintrag gelöscht',undoer(tok));
   });
 }
 function renderSparkline(){
@@ -2255,11 +2265,11 @@ function resolveForgotten(save){
   renderDash();renderTodayCard();renderWeekLive();
   refreshCals();
 }
-function refreshCals(){[calTag,calRange,calShift].forEach(c=>c&&c.refresh());}
+function refreshCals(){[calTag,calRange].forEach(c=>c&&c.refresh());}
 function openDay(k){
   /* Tag k im Tag-Formular öffnen (aus Übersicht, Heatmap, Prüfliste, Wochenleiste, Heute-Karte) */
   document.querySelector('nav button[data-view="v-input"]').click();
-  document.querySelector('#modeSeg button[data-mode="single"]').click();
+  showMode('entry');showEntrySub('single');
   calTag&&calTag.setSelection(k);
   document.getElementById('sDate').value=k;loadSingle();liveSingle();
   window.scrollTo({top:0,behavior:'smooth'});
@@ -2271,7 +2281,19 @@ function startTicker(){
     const el=document.getElementById('punchElapsed');
     if(!el||!DB.pending){stopTicker();return;}
     el.textContent=elapsedTxt();
+    const pe=document.getElementById('punchEnd');if(pe)pe.innerHTML=endTxt();
   },30000);  /* alle 30s reicht — zeigt Minuten */
+}
+function endTxt(){
+  /* "Feierabend 14:30 · noch 4:31" -- aus der erkannten Schicht (Kommen ±20 min). Ohne Schicht: leer. */
+  if(!DB.pending)return '';
+  const sug=guessShift(DB.pending.kommen);if(!sug)return '';
+  let end=hToMin(sug.g);const start=hToMin(DB.pending.kommen);
+  if(end<start)end+=1440;  /* über Mitternacht */
+  const n=new Date();let now=n.getHours()*60+n.getMinutes();
+  if(now<start)now+=1440;
+  const left=end-now;
+  return left>0?`Feierabend <b>${sug.g}</b> · noch <b>${minToH(left)}</b>`:`Feierabend war um <b>${sug.g}</b>`;
 }
 function elapsedTxt(){
   if(!DB.pending)return '';
@@ -2331,6 +2353,7 @@ function renderTodayCard(){
     body.innerHTML=`<div class="punchrun">
       <div class="pr-top"><span class="pr-dot"></span> Eingestempelt <b>${DB.pending.kommen}</b>${sug?` <span class="pr-sug">· ${sug.label}?</span>`:''}</div>
       <div class="pr-elapsed" id="punchElapsed">${elapsedTxt()}</div>
+      <div class="pr-end" id="punchEnd">${endTxt()}</div>
       <button class="act punchout" id="btnPunchOut">■ Jetzt ausstempeln</button>
       <button class="act ghost" id="btnPunchCancel" style="margin-top:6px;font-size:11px;padding:7px">✕ Verwerfen</button>
     </div>`;
@@ -2365,11 +2388,11 @@ function renderTodayCard(){
         const e=planToEntry(planCode,dow);
         if(!e)return;
         if(e.cat==='Arbeit'&&!confirm48h({[k]:e}))return;
-        setEntry(k,e);
+        const tok=setEntry(k,e);
         persist();
         renderDash();renderTodayCard();renderWeekLive();
         refreshCals();
-        toast(`✓ ${planLabel(planCode)} eingetragen`);
+        toast(`✓ ${planLabel(planCode)} eingetragen`,undoer(tok));
       };
       document.getElementById('btnPlanPunch').onclick=punchIn;
       document.getElementById('btnPlanEdit').onclick=()=>{
@@ -2521,16 +2544,16 @@ function quickShift(shift,k){
   const t=shiftTimes(shift,keyDate(k).getDay());
   const e={cat:'Arbeit',k:t.k,g:t.g};
   if(!confirm48h({[k]:e}))return;
-  setEntry(k,e);
+  const tok=setEntry(k,e);
   persist();
-  toast(`✓ ${t.label} eingetragen`);
+  toast(`✓ ${t.label} eingetragen`,undoer(tok));
   renderDash();
   refreshCals();
 }
 function quickCat(cat,k){
-  setEntry(k,{cat});
+  const tok=setEntry(k,{cat});
   persist();
-  toast(`✓ ${cat} eingetragen`);
+  toast(`✓ ${cat} eingetragen`,undoer(tok));
   renderDash();
   refreshCals();
 }
@@ -2648,7 +2671,8 @@ let otScopeVal='month';
 document.querySelectorAll('#otScope button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#otScope button').forEach(x=>x.classList.remove('on'));b.classList.add('on');otScopeVal=b.dataset.scope;renderOT();
 });
-function otWeeks(){
+function weekNets(){
+  /* Alle Wochen des aktiven Jahres mit Einträgen: {id (Montag als Key), w, net, ist, mon, fri, month}, nach Datum sortiert */
   const weeks={};
   for(const k in DB.entries){
     /* Woche gehört zum Jahr ihres Donnerstags (ISO) -- KW 53/2026 enthält auch 1.–3.1.2027 */
@@ -2659,14 +2683,51 @@ function otWeeks(){
     const id=dateKey(mon);
     if(!weeks[id]){
       const fri=new Date(mon);fri.setDate(mon.getDate()+4);
-      weeks[id]={w:isoWeek(mon),net:0,ist:0,mon,fri,month:thu.getMonth()};
+      weeks[id]={id,w:isoWeek(mon),net:0,ist:0,mon,fri,month:thu.getMonth()};
     }
     if(r.diff!=null)weeks[id].net+=r.diff;
     if(r.ist!=null)weeks[id].ist+=r.ist;
   }
-  return Object.values(weeks)
-    .filter(x=>Math.round(x.net)>0&&(otScopeVal==='year'||x.month===curMonth))
-    .sort((a,b)=>a.mon-b.mon);
+  return Object.values(weeks).sort((a,b)=>a.mon-b.mon);
+}
+function otWeeks(){
+  return weekNets().filter(x=>Math.round(x.net)>0&&(otScopeVal==='year'||x.month===curMonth));
+}
+/* ---------- Wochenmeldung: Plus/Minus-Stunden schon übertragen? ---------- */
+const WEEKDONE_LOOKBACK=42;  /* nur Wochen der letzten 6 Wochen melden -- ältere Wochen stehen in der Überstunden-Ansicht */
+function openWeeks(){
+  /* Wochen mit Plus/Minus (>= 1 min), die schon vorbei sind (ab Freitag zählt die laufende Woche) und noch nicht abgehakt wurden */
+  const today=new Date();today.setHours(12,0,0,0);
+  const from=new Date(today);from.setDate(today.getDate()-WEEKDONE_LOOKBACK);
+  return weekNets().filter(x=>Math.round(x.net)!==0&&!DB.weekDone[x.id]&&x.fri<=today&&x.fri>=from);
+}
+function setWeekDone(id,on){
+  const x=weekNets().find(w=>w.id===id);
+  if(on)DB.weekDone[id]=true;else delete DB.weekDone[id];
+  logEvent({type:'settings',detail:`KW ${x?pad(x.w):id}${x?` (${sgn(x.net)})`:''} als ${on?'übertragen markiert':'nicht übertragen markiert'}`});
+  persist();
+}
+function renderWeekDone(){
+  const card=document.getElementById('weekDoneCard');if(!card)return;
+  const open=openWeeks();
+  if(!open.length){card.style.display='none';return;}
+  card.style.display='block';
+  document.getElementById('wdCount').textContent=`${open.length} Woche${open.length===1?'':'n'}`;
+  document.getElementById('wdList').innerHTML=open.map(x=>{
+    const md=`${pad(x.mon.getDate())}.${pad(x.mon.getMonth()+1)}.`,fd=`${pad(x.fri.getDate())}.${pad(x.fri.getMonth()+1)}.`;
+    const cls=x.net>0?'pos':'neg';
+    return `<div class="wdrow"><div class="wdinfo"><b>KW ${pad(x.w)}</b><span>${md}–${fd}</span></div><div class="wdnet ${cls}">${sgn(x.net)}<small>${x.net>0?'Plus':'Minus'}</small></div><button type="button" class="wdok" data-wk="${x.id}">✓ übertragen</button></div>`;
+  }).join('');
+  card.querySelectorAll('[data-wk]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.wk;setWeekDone(id,true);renderWeekDone();renderOT();
+    toast('✓ Als übertragen markiert',()=>{setWeekDone(id,false);renderWeekDone();renderOT();});
+  });
+  const all=document.getElementById('wdAll');
+  all.style.display=open.length>1?'':'none';
+  all.onclick=()=>{
+    const ids=openWeeks().map(x=>x.id);ids.forEach(id=>setWeekDone(id,true));renderWeekDone();renderOT();
+    toast(`✓ ${ids.length} Wochen als übertragen markiert`,()=>{ids.forEach(id=>setWeekDone(id,false));renderWeekDone();renderOT();});
+  };
 }
 function renderOT(){
   const weeks=otWeeks();let tot=0;weeks.forEach(x=>tot+=x.net);
@@ -2685,8 +2746,10 @@ function renderOT(){
       const ist=r.ist!=null?minToH(r.ist):'';
       days+=`<div class="otdayrow"><span class="otd">${WD[day.getDay()]} ${pad(day.getDate())}.${pad(day.getMonth()+1)}.</span><span class="otv">${tm}</span><span class="oti">${ist}</span><span class="otdf ${dc}">${sgn(r.diff)}</span></div>`;
     }
-    return `<div class="otweek"><div class="otwh"><div><div class="otwt">KW ${pad(x.w)}</div><div class="otws">${md}–${fd} · Ist ${minToH(x.ist)}</div></div><div class="otwn pos">${sgn(x.net)}</div></div>${days?`<div class="otdays">${days}</div>`:''}</div>`;
+    const done=!!DB.weekDone[x.id];
+    return `<div class="otweek"><div class="otwh"><div><div class="otwt">KW ${pad(x.w)}</div><div class="otws">${md}–${fd} · Ist ${minToH(x.ist)}</div></div><div style="display:flex;align-items:center;gap:10px"><button type="button" class="otdone${done?' on':''}" data-wk="${x.id}" aria-pressed="${done}">${done?'✓ übertragen':'übertragen?'}</button><div class="otwn pos">${sgn(x.net)}</div></div></div>${days?`<div class="otdays">${days}</div>`:''}</div>`;
   }).join('');
+  box.querySelectorAll('[data-wk]').forEach(b=>b.onclick=()=>{setWeekDone(b.dataset.wk,!DB.weekDone[b.dataset.wk]);renderOT();renderWeekDone();});
 }
 function buildOtReport(){
   /* Überstunden-Zettel fürs Drucken/PDF -- gleiche Wochen wie die Ansicht (Monat oder Jahr) */
@@ -2754,7 +2817,8 @@ function findMissingWorkdays(){
   const today=new Date();
   const end=today.getFullYear()===y?today:new Date(y,11,31);
   const out=[];
-  const cur=new Date(y,0,1);
+  const from=DB.settings.trackFrom;  /* "Erfassung ab" (optional) */
+  const cur=(from&&from>`${y}-01-01`)?keyDate(from):new Date(y,0,1);
   while(cur<=end){
     const dow=cur.getDay();
     const k=dateKey(cur);
@@ -3148,8 +3212,8 @@ document.getElementById('planClear').onclick=()=>{
 };
 
 /* ---------- Foto-Import (Tesseract.js, lazy) ---------- */
-function planStatus(msg,isErr){
-  const el=document.getElementById('planStatus');if(!el)return;
+function planStatus(msg,isErr,id){
+  const el=document.getElementById(id||'planStatus');if(!el)return;
   el.style.display=msg?'block':'none';
   el.textContent=msg||'';
   el.classList.toggle('err',!!isErr);
@@ -3235,19 +3299,20 @@ async function planPhotoImport(file){
     const rowTokens=target.ln.slice().sort((a,b)=>a.x-b.x)
       .map(w=>normPlanToken(w.t)).filter(c=>c!==null);
     /* Sequentiell in die Werktage des gewählten Monats füllen */
-    const m=parseInt(document.getElementById('planMonth').value);
-    const weeks=planMonthWeeks(m);
-    const targetDays=[];weeks.forEach(w=>w.days.forEach(d=>{if(d.inMonth)targetDays.push(d.k);}));
-    let filled=0;
-    targetDays.forEach((k,i)=>{
-      if(i<rowTokens.length){planDraft[k]=rowTokens[i];filled++;}
-    });
-    renderPlanGrid();
-    const unsureN=rowTokens.filter(c=>c==='?').length;
-    planStatus(`✓ ${filled} von ${targetDays.length} Tagen erkannt${unsureN?` · ${unsureN} unsicher (gestrichelt, bitte prüfen)`:''}${usedFallback?' · ⚠ Zeile geraten — Name/Position in Settings prüfen':''}${rowTokens.length!==targetDays.length?` · ⚠ ${rowTokens.length} Codes für ${targetDays.length} Werktage — Verschiebungen möglich!`:''} — Grid prüfen, dann speichern.`);
+    const r=applyPlanSequence(rowTokens);
+    planStatus(`✓ ${r.filled} von ${r.total} Tagen erkannt${r.unsure?` · ${r.unsure} unsicher (gestrichelt, bitte prüfen)`:''}${usedFallback?' · ⚠ Zeile geraten — Name/Position oben prüfen':''}${r.count!==r.total?` · ⚠ ${r.count} Codes für ${r.total} Werktage — Verschiebungen möglich!`:''} — Vorschau prüfen, dann speichern.`);
   }catch(err){
     planStatus('✗ '+err.message,true);
   }
+}
+function applyPlanSequence(tokens){
+  /* Codes der Reihe nach auf die Werktage (Mo–Fr) des gewählten Monats legen -- gemeinsam für Foto und Text */
+  const m=parseInt(document.getElementById('planMonth').value);
+  const targetDays=[];planMonthWeeks(m).forEach(w=>w.days.forEach(d=>{if(d.inMonth)targetDays.push(d.k);}));
+  let filled=0;
+  targetDays.forEach((k,i)=>{if(i<tokens.length){planDraft[k]=tokens[i];filled++;}});
+  renderPlanGrid();
+  return {filled,total:targetDays.length,count:tokens.length,unsure:tokens.filter(c=>c==='?').length};
 }
 document.getElementById('planPhotoBtn').onclick=()=>document.getElementById('planPhoto').click();
 document.getElementById('planPhoto').onchange=e=>{
@@ -3255,6 +3320,82 @@ document.getElementById('planPhoto').onchange=e=>{
   if(f)planPhotoImport(f);
   e.target.value='';
 };
+
+/* ---------- Dienstplan: Text-Eingabe + Umschalter Auswahl | Text | Foto ---------- */
+const PLAN_WORDS={'früh':'F','frueh':'F','fruh':'F','spät':'S','spaet':'S','tag':'T','tagschicht':'T','springer':'SP','urlaub':'Ur',
+  'frei':'','-':'','–':'','—':'','x':'','off':'','/':''};  /* '' = kein Dienst (Vorschau-Tag leeren) */
+function planCodeFromWord(w){
+  /* Wort -> Plan-Code (F S T SP Ur), '' = frei, '?' = unsicher (kurz & unbekannt), null = ignorieren (Name, Zahl, …) */
+  const lw=w.trim().toLowerCase();
+  if(lw in PLAN_WORDS)return PLAN_WORDS[lw];
+  return normPlanToken(w);
+}
+const PLAN_DATE_RE='(\\d{4}-\\d{2}-\\d{2}|\\d{1,2}\\.\\d{1,2}\\.?(?:\\d{2,4})?)';
+const PLAN_LINE_RE=new RegExp('^'+PLAN_DATE_RE+'(?:\\s*(?:-|–|—|bis)\\s*'+PLAN_DATE_RE+')?\\s+(.+)$','i');
+function parsePlanDate(s){
+  let y,mo,d,m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(m){y=+m[1];mo=+m[2];d=+m[3];}
+  else{
+    m=s.match(/^(\d{1,2})\.(\d{1,2})\.?(\d{2,4})?$/);if(!m)return null;
+    d=+m[1];mo=+m[2];y=m[3]?(+m[3]<100?2000+(+m[3]):+m[3]):DB.settings.year;
+  }
+  const dt=new Date(y,mo-1,d,12);
+  return (dt.getFullYear()===y&&dt.getMonth()===mo-1&&dt.getDate()===d)?dt:null;
+}
+function parsePlanText(text){
+  /* Zeilen mit "Datum[–Datum] Code" -> dated; alles andere -> other. Gibt es kein einziges Datum, gilt der Text als Code-Folge. */
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l&&!l.startsWith('#'));
+  const dated=[],other=[];
+  lines.forEach(l=>{
+    const m=l.match(PLAN_LINE_RE);
+    if(m){
+      const d1=parsePlanDate(m[1]),d2=m[2]?parsePlanDate(m[2]):d1,code=planCodeFromWord(m[3].split(/\s+/)[0]);
+      if(d1&&d2&&code!==null){dated.push({d1,d2,code});return;}
+    }
+    other.push(l);
+  });
+  return {lines,dated,other};
+}
+function applyPlanText(){
+  const st=(msg,err)=>planStatus(msg,err,'planTextStatus');
+  const text=document.getElementById('planText').value;
+  const p=parsePlanText(text);
+  if(!p.lines.length){st('Nichts eingegeben.',true);return;}
+  const m=parseInt(document.getElementById('planMonth').value);
+  if(p.dated.length){
+    const inMonth=new Set();planMonthWeeks(m).forEach(w=>w.days.forEach(d=>{if(d.inMonth)inMonth.add(d.k);}));
+    let set=0,outside=0;
+    p.dated.forEach(({d1,d2,code})=>{
+      const a=d1<=d2?d1:d2,b=d1<=d2?d2:d1;
+      for(const d=new Date(a);d<=b;d.setDate(d.getDate()+1)){
+        const dow=d.getDay();if(dow===0||dow===6)continue;  /* nur Mo–Fr, wie das Raster */
+        const k=dateKey(d);
+        if(inMonth.has(k)){planDraft[k]=code;set++;}else outside++;
+      }
+    });
+    renderPlanGrid();
+    st(`${set?'✓':'✗'} ${set} Tag${set===1?'':'e'} gesetzt${outside?` · ⚠ ${outside} außerhalb von ${MONTHS[m]} ignoriert (Monat oben wählen)`:''}${p.other.length?` · ⚠ ${p.other.length} Zeile${p.other.length===1?'':'n'} nicht verstanden`:''}${set?' — Vorschau prüfen, dann speichern.':''}`,!set);
+    return;
+  }
+  const tokens=text.split(/[\s,;|]+/).filter(Boolean).map(planCodeFromWord).filter(c=>c!==null);
+  if(!tokens.length){st('✗ Keine Codes erkannt (erlaubt: F, S, T, SP, Ur, - für frei).',true);return;}
+  const r=applyPlanSequence(tokens);
+  st(`✓ ${r.filled} von ${r.total} Werktagen gesetzt${r.unsure?` · ${r.unsure} unsicher (gestrichelt)`:''}${r.count!==r.total?` · ⚠ ${r.count} Codes für ${r.total} Werktage — Verschiebungen möglich!`:''} — Vorschau prüfen, dann speichern.`);
+}
+document.getElementById('planTextApply').onclick=applyPlanText;
+function showPlanPane(p){
+  document.querySelectorAll('#planSeg button').forEach(x=>x.classList.toggle('on',x.dataset.ps===p));
+  document.getElementById('planPickPane').style.display=p==='pick'?'':'none';
+  document.getElementById('planTextPane').style.display=p==='text'?'':'none';
+  document.getElementById('planPhotoPane').style.display=p==='photo'?'':'none';
+  if(p==='photo'){
+    document.getElementById('planNameIn').value=DB.settings.planName||'';
+    document.getElementById('planRowIn').value=DB.settings.planRow||'';
+  }
+}
+document.querySelectorAll('#planSeg button').forEach(b=>b.onclick=()=>showPlanPane(b.dataset.ps));
+document.getElementById('planNameIn').onchange=e=>{DB.settings.planName=e.target.value.trim();persist();};
+document.getElementById('planRowIn').onchange=e=>{DB.settings.planRow=e.target.value.trim();persist();};
 
 /* ---------- Text-Import ---------- */
 const IMPORT_CATS=['Urlaub','Urlaub 1/2','Krank','Bereitschaft','Ausgleichszeit','Kompensationstag Grp1','Kompensationstag Grp2'];
@@ -3435,6 +3576,7 @@ document.getElementById('gearBtn').onclick=()=>{
   document.getElementById('setWeek').value=DB.settings.weekHours;
   document.getElementById('setDays').value=DB.settings.workDays;
   document.getElementById('setCarry').value=carryStr(DB.settings.year);
+  document.getElementById('setTrackFrom').value=DB.settings.trackFrom||'';
   /* Jahr im Modal umgestellt -> Übertrag des gewählten Jahres zeigen */
   document.getElementById('setYear').onchange=e=>{document.getElementById('setCarry').value=proposeCarry(parseInt(e.target.value));};
   document.getElementById('setForfeit').value=minToH(DB.settings.forfeitMin||0);
@@ -3451,8 +3593,6 @@ document.getElementById('gearBtn').onclick=()=>{
   document.querySelectorAll('#breakModeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.bm===bmode));
   document.getElementById('breakTieredFields').style.display=bmode==='tiered'?'':'none';
   document.getElementById('breakFixedFields').style.display=bmode==='fixed'?'':'none';
-  document.getElementById('setPlanName').value=DB.settings.planName||'';
-  document.getElementById('setPlanRow').value=DB.settings.planRow||'';
   renderDbxUi();
   setModal.classList.add('on');
 };
@@ -3480,17 +3620,10 @@ function changeYear(newYear){
   curMonth=td.getFullYear()===newYear?td.getMonth():0;
   monthSel.innerHTML=MONTHS.map((m,i)=>`<option value="${i}">${m} ${newYear}</option>`).join('');
   monthSel.value=curMonth;
-  buildKW();
   /* Kalender aufs neue Jahr setzen */
   const newMon=td.getFullYear()===newYear?td.getMonth():0;
   if(calTag)calTag.setYearMonth(newYear,newMon);
   if(calRange)calRange.setYearMonth(newYear,newMon);
-  if(calShift){
-    const w=td.getFullYear()===newYear?isoWeek(td):1;
-    const mon=isoWeekMonday(newYear,w);
-    calShift.setYearMonth(newYear,mon.getMonth());
-    calShift.setSelection({monday:dateKey(mon),week:w});
-  }
   /* Default-Date für Eingaben aktualisieren */
   const newDefKey=td.getFullYear()===newYear?dateKey(td):`${newYear}-01-01`;
   document.getElementById('sDate').value=newDefKey;
@@ -3546,6 +3679,9 @@ document.getElementById('setSave').onclick=()=>{
   DB.settings.workDays=parseInt(document.getElementById('setDays').value)||5;
   let c=document.getElementById('setCarry').value.trim()||'0:00';if(!/^-?\d+:\d{2}$/.test(c))c='0:00';
   DB.settings.carryByYear=Object.assign({},DB.settings.carryByYear,{[DB.settings.year]:c});
+  const tf=document.getElementById('setTrackFrom').value||'';
+  const prevTf=DB.settings.trackFrom||'';
+  DB.settings.trackFrom=tf;
   let fStr=document.getElementById('setForfeit').value.trim()||'0:00';
   if(!/^\d+:\d{2}$/.test(fStr))fStr='0:00';
   DB.settings.forfeitMin=hToMin(fStr)||0;
@@ -3564,12 +3700,11 @@ document.getElementById('setSave').onclick=()=>{
   rules.fixed=(bmode==='fixed');
   rules.fixedMin=!isNaN(bfixed)?bfixed:30;
   DB.settings.breakRules=Object.assign({},DB.settings.breakRules,rules);
-  DB.settings.planName=document.getElementById('setPlanName').value.trim();
-  DB.settings.planRow=document.getElementById('setPlanRow').value.trim();
   const diffs=[];
   if(before.w!==DB.settings.weekHours)diffs.push(`Sollzeit/W: ${before.w}→${DB.settings.weekHours}h`);
   if(before.d!==DB.settings.workDays)diffs.push(`Arbeitstage: ${before.d}→${DB.settings.workDays}`);
   if(prevCarry!==c)diffs.push(`Übertrag ${DB.settings.year}: ${prevCarry}→${c}`);
+  if(prevTf!==tf)diffs.push(`Erfassung ab: ${prevTf||'1.1.'}→${tf||'1.1.'}`);
   if((before.f||0)!==DB.settings.forfeitMin)diffs.push(`Verfall-Grenze: ${minToH(before.f||0)}→${minToH(DB.settings.forfeitMin)}`);
   if((before.u||0)!==DB.settings.urlaubTotal)diffs.push(`Urlaubsanspruch: ${before.u||0}→${DB.settings.urlaubTotal}`);
   if(diffs.length)logEvent({type:'settings',detail:diffs.join(' · ')});
@@ -3594,7 +3729,9 @@ function randStr(n){const a=new Uint8Array(n);crypto.getRandomValues(a);return b
 function syncSettings(){const s={};for(const k in DB.settings)if(!SYNC_LOCAL_SET.includes(k))s[k]=DB.settings[k];return s;}
 function buildSnap(){
   const ser=o=>{const r={};for(const k in o)r[k]=JSON.stringify(o[k]);return r;};
-  return {e:ser(DB.entries),p:ser(DB.plan),f:ser(DB.flagsReviewed),s:JSON.stringify(syncSettings()),pd:JSON.stringify(DB.pending||null)};
+  const snap={s:JSON.stringify(syncSettings()),pd:JSON.stringify(DB.pending||null)};
+  SYNC_MAPS.forEach(([k,f])=>{snap[k]=ser(DB[f]);});
+  return snap;
 }
 function trackMap(cur,snap,meta,now){
   for(const k in cur){const s=JSON.stringify(cur[k]);if(snap[k]!==s){meta[k]=now;snap[k]=s;}}
@@ -3602,7 +3739,7 @@ function trackMap(cur,snap,meta,now){
 }
 function syncTrack(){
   const now=Date.now(),m=DB.meta;
-  trackMap(DB.entries,syncSnap.e,m.e,now);trackMap(DB.plan,syncSnap.p,m.p,now);trackMap(DB.flagsReviewed,syncSnap.f,m.f,now);
+  SYNC_MAPS.forEach(([k,f])=>trackMap(DB[f],syncSnap[k],m[k],now));
   const ss=JSON.stringify(syncSettings());if(ss!==syncSnap.s){syncSnap.s=ss;m.s=now;}
   const pd=JSON.stringify(DB.pending||null);if(pd!==syncSnap.pd){syncSnap.pd=pd;m.pt=now;}  /* Stempeluhr: am Handy ein-, am PC ausstempeln */
 }
@@ -3638,27 +3775,39 @@ function mergeLog(a,b){
   [...a,...b].forEach(ev=>{const id=`${ev.ts}|${ev.type}|${ev.k||ev.label||''}`;const o=by[id];if(!o||(ev.undone&&!o.undone))by[id]=ev;});
   return Object.values(by).sort((x,y)=>y.ts-x.ts).slice(0,500);
 }
-function syncParts(o){return {entries:o.entries||{},plan:o.plan||{},flagsReviewed:o.flagsReviewed||{},settings:o.settings||{},log:o.log||[],pending:o.pending||null,meta:o.meta||{}};}
-function localParts(){return syncParts({entries:DB.entries,plan:DB.plan,flagsReviewed:DB.flagsReviewed,settings:syncSettings(),log:DB.log,pending:DB.pending,meta:DB.meta});}
+function syncParts(o){
+  const r={settings:o.settings||{},log:o.log||[],pending:o.pending||null,meta:o.meta||{}};
+  SYNC_MAPS.forEach(([,f])=>{r[f]=o[f]||{};});
+  return r;
+}
+function localParts(){
+  const o={settings:syncSettings(),log:DB.log,pending:DB.pending,meta:DB.meta};
+  SYNC_MAPS.forEach(([,f])=>{o[f]=DB[f];});
+  return syncParts(o);
+}
 function mergeAll(R){
-  const rm=Object.assign({e:{},p:{},f:{},s:0},R.meta||{}),m=DB.meta;
-  const E=mergeKeyed(m.e,rm.e||{},DB.entries,R.entries||{});
-  const P=mergeKeyed(m.p,rm.p||{},DB.plan,R.plan||{});
-  const F=mergeKeyed(m.f,rm.f||{},DB.flagsReviewed,R.flagsReviewed||{});
+  const rm=Object.assign(freshMeta(),R.meta||{}),m=DB.meta;
+  const mg={},meta={};let conf=[];
+  SYNC_MAPS.forEach(([k,f])=>{
+    const r=mergeKeyed(m[k]||{},rm[k]||{},DB[f],R[f]||{});
+    mg[f]=r.val;meta[k]=r.meta;
+    if(k==='e')conf=r.conf;  /* Konflikte werden nur für Tageseinträge gemeldet */
+  });
   const useR=!!R.settings&&(rm.s||0)>=(m.s||0);
   const lc=Math.max(m.lc||0,rm.lc||0);  /* Verlauf auf einem Gerät geleert -> ältere Events überall verwerfen */
   const pt=Math.max(m.pt||0,rm.pt||0);  /* Stempeluhr: neuere Änderung gewinnt, Gleichstand bleibt lokal */
-  const merged=syncParts({entries:E.val,plan:P.val,flagsReviewed:F.val,settings:useR?R.settings:syncSettings(),
+  const merged=syncParts(Object.assign(mg,{settings:useR?R.settings:syncSettings(),
     log:mergeLog(DB.log||[],R.log||[]).filter(ev=>ev.ts>lc),
     pending:(rm.pt||0)>(m.pt||0)?(R.pending||null):(DB.pending||null),
-    meta:Object.assign({e:E.meta,p:P.meta,f:F.meta,s:Math.max(m.s||0,rm.s||0)},lc?{lc}:{},pt?{pt}:{})});
+    meta:Object.assign(meta,{s:Math.max(m.s||0,rm.s||0)},lc?{lc}:{},pt?{pt}:{})}));
   const ms=stable(merged);
-  return {merged,conf:E.conf,changedLocal:ms!==stable(localParts()),changedRemote:ms!==stable(syncParts(Object.assign({},R,{meta:rm})))};
+  return {merged,conf,changedLocal:ms!==stable(localParts()),changedRemote:ms!==stable(syncParts(Object.assign({},R,{meta:rm})))};
 }
 function applyMerged(mg,conf){
   /* Remote-Stand in lokales DB übernehmen, ohne persist() (sonst Upload-Schleife) */
   const keep={};SYNC_LOCAL_SET.forEach(k=>{if(k in DB.settings)keep[k]=DB.settings[k];});
-  DB.entries=mg.entries;DB.plan=mg.plan;DB.flagsReviewed=mg.flagsReviewed;DB.log=mg.log;DB.meta=mg.meta;DB.pending=mg.pending;
+  SYNC_MAPS.forEach(([,f])=>{DB[f]=mg[f];});
+  DB.log=mg.log;DB.meta=mg.meta;DB.pending=mg.pending;
   DB.settings=Object.assign({},mg.settings,keep);
   conf.forEach(c=>logEvent({type:'settings',detail:`Sync-Konflikt ${c.k}: lokal „${fmtEntry(c.local)}" durch „${fmtEntry(c.remote)}" aus Dropbox ersetzt`}));
   syncSnap=buildSnap();
@@ -3669,12 +3818,14 @@ function applyMerged(mg,conf){
 function localIsFresh(){
   /* Frisch installiertes Gerät: nur die automatisch geseedeten Halbtage, sonst nichts */
   const ks=Object.keys(DB.entries);
-  if(Object.keys(DB.plan).length||ks.length>2)return false;
+  if(Object.keys(DB.plan).length||Object.keys(DB.weekDone).length||ks.length>2)return false;
   if((DB.log||[]).some(e=>!(e.type==='bulk'&&/^Vorlagen/.test(e.label||''))))return false;
   return ks.every(k=>/-12-(24|31)$/.test(k)&&DB.entries[k].cat===DB.settings.halfDayDefault);
 }
 function makeRemote(){
-  return {_app:'AK-Zeit',_v:2,_ts:new Date().toISOString(),entries:DB.entries,plan:DB.plan,flagsReviewed:DB.flagsReviewed,settings:syncSettings(),log:DB.log,pending:DB.pending||null,meta:DB.meta};
+  const o={_app:'AK-Zeit',_v:2,_ts:new Date().toISOString(),settings:syncSettings(),log:DB.log,pending:DB.pending||null,meta:DB.meta};
+  SYNC_MAPS.forEach(([,f])=>{o[f]=DB[f];});
+  return o;
 }
 
 /* --- Dropbox-API --- */
@@ -3746,7 +3897,7 @@ async function syncNow(manual){
       let doUp=true;
       if(remote){
         if(first&&attempt===0){try{localStorage.setItem('ak_zeit_premerge',JSON.stringify(DB));}catch(e){}}  /* Rettungs-Kopie vor dem ersten Abgleich */
-        if(first&&localIsFresh()){DB.entries={};DB.plan={};DB.flagsReviewed={};DB.log=[];DB.meta={e:{},p:{},f:{},s:0};syncSnap=buildSnap();}
+        if(first&&localIsFresh()){SYNC_MAPS.forEach(([,f])=>{DB[f]={};});DB.log=[];DB.meta=freshMeta();syncSnap=buildSnap();}
         const res=mergeAll(remote.data);
         if(res.changedLocal||res.conf.length)applyMerged(res.merged,res.conf);
         doUp=res.changedRemote||res.conf.length>0;
@@ -3872,11 +4023,11 @@ function importBackup(file){
       if(Array.isArray(data.log))DB.log=data.log;
       DB.plan=data.plan||{};
       DB.flagsReviewed=data.flagsReviewed||{};
+      DB.weekDone=data.weekDone||{};
       /* Jahr aus der Sicherung kann vom aktuellen abweichen -> Feiertage, Monats-/KW-Auswahl nachziehen */
       if(!DB.settings.carryByYear)DB.settings.carryByYear={[DB.settings.year]:DB.settings.carry||'0:00'};  /* alte Sicherung ohne Übertrag pro Jahr */
       setYearHolidays(DB.settings.year);
       monthSel.innerHTML=MONTHS.map((m,i)=>`<option value="${i}">${m} ${DB.settings.year}</option>`).join('');
-      buildKW();
       applyTheme(DB.settings.theme||'dark');
       logEvent({type:'settings',detail:`Sicherung importiert · ${n} Einträge`});
       persist();
@@ -4304,10 +4455,10 @@ function handleShortcut(){
     if(!code){toast('Für heute ist kein Plan hinterlegt');return;}
     const e=planToEntry(code,today.getDay());if(!e)return;
     if(e.cat==='Arbeit'&&!confirm48h({[k]:e}))return;
-    setEntry(k,e);
+    const tok=setEntry(k,e);
     persist();renderDash();
     refreshCals();
-    toast(`✓ ${planLabel(code)} eingetragen`);
+    toast(`✓ ${planLabel(code)} eingetragen`,undoer(tok));
   }
 }
 
@@ -4316,6 +4467,7 @@ if(!Store.ok)document.getElementById('storageWarn').style.display='block';
 updateSaveSub(false);
 fillShiftLabels();updateSpaetLabel();
 booted=true;
+renderDash();  /* App startet auf der Übersicht (Heute-Karte) */
 renderDbxUi();
 /* Kurzbefehle erst nach dem ersten Abgleich: sonst könnte "laut Plan" einen Eintrag vom anderen Gerät überschreiben */
 dbxHandleRedirect().then(()=>dbxConnected()?syncNow():null).then(handleShortcut);
