@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0a0e0a">
+<meta name="theme-color" content="#0e1116">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -13,50 +13,48 @@
 <title>AK Zeit — Arbeitszeiterfassung</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#080b08; --bg2:#0d120d; --panel:#10160f; --panel2:#141b13;
-  --line:#1d2a1c; --line2:#28391f;
-  --ink:#dceadb; --mut:#7b917a; --mut2:#566753;
-  --neon:#3dff77; --neon-soft:#2fd463; --neon-dim:#1c7a3c;
-  --red:#ff5d63; --red-dim:#7a2a2e; --amber:#ffc24d;
+  --bg:#0e1116; --bg2:#12161d; --panel:#161b22; --panel2:#1c222b;
+  --line:#2a313b; --line2:#353e4a;
+  --ink:#e6edf3; --mut:#9ba6b2; --mut2:#7d8794;
+  --neon:#3dff77; --neon-soft:#2fd463; --neon-dim:#1c7a3c; --neon-rgb:61,255,119; --on-neon:#04130a;
+  --red:#ff6b72; --red-dim:#7a2a2e; --amber:#ffc24d;
   --mono:'JetBrains Mono',ui-monospace,'SF Mono','Cascadia Mono',Menlo,Consolas,monospace;
-  --sans:'Sora',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  --r:14px;
+  --sans:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --r:18px;
 }
 html[data-theme="light"]{
-  --bg:#f2f5f0; --bg2:#e8ede6; --panel:#ffffff; --panel2:#f4f7f2;
-  --line:#d5ded2; --line2:#c2cebb;
-  --ink:#17241a; --mut:#5b6f5c; --mut2:#8a9c8a;
-  --neon:#0d8a3f; --neon-soft:#11a04b; --neon-dim:#7fc99a;
+  --bg:#eef1f5; --bg2:#e4e8ee; --panel:#ffffff; --panel2:#f5f7fa;
+  --line:#d8dee6; --line2:#c5cdd8;
+  --ink:#111827; --mut:#4b5563; --mut2:#6b7280;
+  --neon:#0d8a3f; --neon-soft:#11a04b; --neon-dim:#7fc99a; --neon-rgb:13,138,63; --on-neon:#ffffff;
   --red:#c92830; --red-dim:#f0b9bc; --amber:#b57b00;
 }
-html[data-theme="light"] .card.glow{box-shadow:0 2px 14px rgba(13,138,63,.09)}
-html[data-theme="light"] nav{background:rgba(255,255,255,.92);border-top:1px solid var(--line)}
-html[data-theme="light"] nav button.on .ic{filter:drop-shadow(0 0 6px rgba(13,138,63,.35))}
-html[data-theme="light"] .yrdy.we{background:#e0e5dd;color:#9aa898}
-html[data-theme="light"] .wlday.we{opacity:.45}
-html[data-theme="light"] header{background:linear-gradient(180deg,rgba(242,245,240,.97),rgba(242,245,240,.88))}
-html[data-theme="light"] .yrdy.none{background:#e3e9e1;color:#5b6f5c}  /* nur leere Tage -- ein allgemeines .yrdy würde die Kategorie-Farben überstimmen */
+/* Akzentfarbe richtet sich nach der Schicht von heute (Eintrag, sonst Plan) -- gleiche Farben wie in der Heatmap.
+   Früh = Grün (Standard), Tag = Lind, Spät = Orange. Hintergründe und Flächen bleiben immer gleich. */
+html[data-shift="tag"]{--neon:#aaff77;--neon-soft:#8fdc5f;--neon-dim:#4f8a2c;--neon-rgb:170,255,119}
+html[data-shift="spaet"]{--neon:#ff9d4d;--neon-soft:#e88a3a;--neon-dim:#8a5527;--neon-rgb:255,157,77}
+html[data-theme="light"][data-shift="tag"]{--neon:#4d7f0a;--neon-soft:#5e9610;--neon-dim:#a7c97f;--neon-rgb:77,127,10}
+html[data-theme="light"][data-shift="spaet"]{--neon:#b84f06;--neon-soft:#d06210;--neon-dim:#e6b48a;--neon-rgb:184,79,6}
+html[data-theme="light"] nav{box-shadow:0 8px 24px -10px rgba(17,24,39,.25)}
+html[data-theme="light"] .yrdy.we{background:#e4e8ee;color:#6b7280}
+html[data-theme="light"] header{background:rgba(238,241,245,.92)}
+html[data-theme="light"] .yrdy.none{background:#e4e8ee;color:#4b5563}  /* nur leere Tage -- ein allgemeines .yrdy würde die Kategorie-Farben überstimmen */
 html[data-theme="light"] .yrdy.d-pos2{color:#fff}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.45;overscroll-behavior-y:none}
 body{
   min-height:100dvh;
-  background-image:
-    radial-gradient(140% 80% at 50% -10%, rgba(61,255,119,.07), transparent 60%),
-    linear-gradient(rgba(61,255,119,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(61,255,119,.025) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 34px, 34px 100%;
-  padding-bottom: calc(74px + env(safe-area-inset-bottom));
+  padding-bottom: calc(100px + env(safe-area-inset-bottom));
 }
 .wrap{max-width:560px;margin:0 auto;padding:0 14px}
 /* Header */
-header{position:sticky;top:0;z-index:30;background:linear-gradient(180deg,rgba(8,11,8,.96),rgba(8,11,8,.82));backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 0 10px}
+header{position:sticky;top:0;z-index:30;background:rgba(14,17,22,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 0 10px}
 .hd{display:flex;align-items:center;gap:12px}
 .logo{display:flex;align-items:baseline;gap:8px;font-family:var(--mono);font-weight:700;letter-spacing:1px}
-.logo .ak{background:var(--neon);color:#04130a;padding:2px 7px;border-radius:7px;font-size:15px;box-shadow:0 0 18px rgba(61,255,119,.45)}
+.logo .ak{background:var(--neon);color:var(--on-neon);padding:2px 7px;border-radius:7px;font-size:15px}
 .logo .ttl{font-size:15px;color:var(--ink)}
 .logo .sub{font-family:var(--sans);font-size:10.5px;color:var(--mut);letter-spacing:.4px;font-weight:500}
 .gear{margin-left:auto;background:var(--panel);border:1px solid var(--line);color:var(--mut);width:38px;height:38px;border-radius:11px;font-size:18px;cursor:pointer;display:grid;place-items:center}
@@ -66,53 +64,57 @@ main{padding-top:16px}
 .view{display:none;animation:fade .25s ease}
 .view.on{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-h2.vt{font-family:var(--mono);font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--neon-soft);margin:0 0 12px;font-weight:600}
+h2.vt{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--mut);margin:0 0 12px;font-weight:600}
 /* Cards */
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
-.card.glow{border-color:var(--line2);box-shadow:0 0 0 1px rgba(61,255,119,.04),0 8px 30px -18px rgba(61,255,119,.4)}
+.card.glow{border-color:var(--line2)}
 /* Segmented */
-.seg{display:flex;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:4px;gap:4px;margin-bottom:16px}
-.seg button{flex:1;background:transparent;border:0;color:var(--mut);font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.6px;padding:9px 6px;border-radius:8px;cursor:pointer;text-transform:uppercase}
-.seg button.on{background:var(--neon);color:#04130a;box-shadow:0 0 14px rgba(61,255,119,.4)}
+.seg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;margin-bottom:16px}
+.seg button{flex:1;background:transparent;border:0;color:var(--mut);font-family:var(--sans);font-size:13px;font-weight:600;padding:10px 6px;min-height:42px;border-radius:10px;cursor:pointer}
+.seg button.on{background:var(--neon);color:var(--on-neon)}
 /* Form */
 label.fl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--mut);margin:0 0 6px}
 label.fl .flopt{color:var(--mut2);font-size:9.5px;letter-spacing:.5px;text-transform:none;margin-left:4px}
 .caldy.hasnote::before{content:'';position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--amber);opacity:.9}
 .field{margin-bottom:14px}
-input,select{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:17px;padding:12px 13px;border-radius:11px;-webkit-appearance:none;appearance:none}
-input:focus,select:focus{outline:none;border-color:var(--neon-soft);box-shadow:0 0 0 3px rgba(61,255,119,.12)}
+input,select{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:17px;padding:12px 13px;border-radius:14px;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{outline:none;border-color:var(--neon-soft);box-shadow:0 0 0 3px rgba(var(--neon-rgb),.12)}
 select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237b917a' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 13px center;padding-right:38px}
 input[type="date"],input[type="time"]{min-height:48px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .chk{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;cursor:pointer;transition:background .15s,border-color .15s}
 .chk input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--neon)}
 .chk span{font-size:13.5px;color:var(--mut2);transition:color .15s}
-.chk:has(input:checked){background:rgba(61,255,119,.09);border-color:var(--neon-dim)}
+.chk:has(input:checked){background:rgba(var(--neon-rgb),.09);border-color:var(--neon-dim)}
 .chk:has(input:checked) span{color:var(--ink)}
 .chk:has(input:checked)::after{content:'AN';margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--neon);letter-spacing:1px;font-weight:700}
 .chk:not(:has(input:checked))::after{content:'AUS';margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--mut2);letter-spacing:1px}
 .shiftbtns{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
 .shiftbtn{background:var(--bg2);border:1px solid var(--line2);color:var(--ink);text-align:left;padding:14px 16px;border-radius:12px;cursor:pointer;font-family:var(--sans);transition:border-color .15s,transform .1s}
-.shiftbtn:active{background:var(--panel2);border-color:var(--neon);transform:scale(.99);box-shadow:0 0 16px rgba(61,255,119,.25)}
+.shiftbtn:active{background:var(--panel2);border-color:var(--neon);transform:scale(.99);box-shadow:0 0 16px rgba(var(--neon-rgb),.25)}
 .shiftbtn .shln{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--neon-soft);letter-spacing:.5px}
 .shiftbtn .shtm{font-family:var(--mono);font-size:12px;color:var(--mut);margin-top:5px;line-height:1.6}
-button.act{width:100%;background:var(--neon);color:#04130a;border:0;font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:1px;padding:15px;border-radius:12px;cursor:pointer;text-transform:uppercase;box-shadow:0 0 20px rgba(61,255,119,.35)}
+button.act{width:100%;background:var(--neon);color:var(--on-neon);border:0;font-family:var(--sans);font-weight:700;font-size:15px;letter-spacing:.2px;padding:15px;min-height:52px;border-radius:16px;cursor:pointer}
 button.act:active{transform:scale(.99)}
 button.act:disabled{opacity:.4;box-shadow:none}
 button.ghost{background:transparent;border:1px solid var(--line2);color:var(--mut);box-shadow:none}
 .hint{font-size:12.5px;color:var(--mut2);margin-top:10px;line-height:1.5}
-.note{background:rgba(61,255,119,.05);border:1px solid var(--line2);border-radius:11px;padding:12px 13px;font-size:12.5px;color:var(--mut);margin-top:6px;line-height:1.55}
+.note{background:rgba(var(--neon-rgb),.05);border:1px solid var(--line2);border-radius:11px;padding:12px 13px;font-size:12.5px;color:var(--mut);margin-top:6px;line-height:1.55}
 .note b{color:var(--neon-soft);font-weight:600}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom));background:var(--panel2);border:1px solid var(--neon-dim);color:var(--ink);padding:11px 18px;border-radius:12px;font-size:13.5px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;box-shadow:0 0 24px rgba(61,255,119,.25);max-width:90%;text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(98px + env(safe-area-inset-bottom));background:var(--panel2);border:1px solid var(--neon-dim);color:var(--ink);padding:11px 18px;border-radius:12px;font-size:13.5px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;box-shadow:0 0 24px rgba(var(--neon-rgb),.25);max-width:90%;text-align:center}
 .toast.show{opacity:1}
 .toast.show.hasundo{pointer-events:auto;display:flex;align-items:center;gap:14px;padding:6px 6px 6px 18px}
-.toastundo{background:var(--neon);color:var(--bg);border:0;border-radius:9px;min-height:40px;padding:0 14px;font-family:var(--mono);font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.toastundo{background:var(--neon);color:var(--on-neon);border:0;border-radius:9px;min-height:40px;padding:0 14px;font-family:var(--mono);font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap}
 /* Summary numbers */
 .sumgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--line);border-radius:12px;overflow:hidden;border:1px solid var(--line)}
 .sumcell{background:var(--panel2);padding:14px 8px;text-align:center}
 .sumcell .k{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--mut)}
 .sumcell .v{font-family:var(--mono);font-size:21px;font-weight:700;margin-top:4px}
 .pos{color:var(--neon)}.neg{color:var(--red)}.zero{color:var(--mut)}
+.balhero{display:flex;flex-direction:column;gap:2px;margin:0 0 16px}
+.balhero .lab{font-size:12px;color:var(--mut);font-weight:600;letter-spacing:.3px}
+.balhero .bal{font-family:var(--mono);font-size:50px;font-weight:700;line-height:1.05;letter-spacing:-2px}
+.balhero .balsub{font-size:13px;color:var(--mut)}
 .balbar{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
 .balbar .lab{font-size:12px;color:var(--mut);font-family:var(--mono);letter-spacing:.5px}
 .balbar .bal{font-family:var(--mono);font-size:18px;font-weight:700}
@@ -190,7 +192,7 @@ button.ghost{background:transparent;border:1px solid var(--line2);color:var(--mu
 .urest.warn{color:#ff9d4d}
 .urest.neg{color:#ff5d63}
 .usuf{font-size:11px;color:var(--mut2);margin-left:4px;letter-spacing:.4px}
-.sdsec{margin:0 0 12px;border:1px solid var(--line);border-radius:10px;padding:0;background:var(--bg2)}
+.sdsec{margin:0 0 12px;border:1px solid var(--line);border-radius:14px;padding:0;background:var(--bg2)}
 .sdsec summary{cursor:pointer;padding:11px 13px;font-family:var(--mono);font-size:12px;color:var(--mut);list-style:none;user-select:none;display:flex;align-items:center;gap:8px;letter-spacing:.3px}
 .sdsec summary::-webkit-details-marker{display:none}
 .sdsec summary::before{content:'▸';font-size:9px;color:var(--mut2);transition:transform .15s}
@@ -198,7 +200,7 @@ button.ghost{background:transparent;border:1px solid var(--line2);color:var(--mu
 .sdsec[open] summary{color:var(--ink);border-bottom:1px solid var(--line)}
 .sdbody{padding:12px 13px 13px}
 /* PWA Install-Hinweis */
-.pwahint{display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,rgba(61,255,119,.06),rgba(61,255,119,.02));border:1px solid var(--neon-dim);border-radius:11px;padding:10px 12px;margin:0 0 14px}
+.pwahint{display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,rgba(var(--neon-rgb),.06),rgba(var(--neon-rgb),.02));border:1px solid var(--neon-dim);border-radius:11px;padding:10px 12px;margin:0 0 14px}
 .pwatxt{flex:1;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.5}
 .pwaMini{font-size:10.5px;color:var(--mut)}
 .pwaX{background:transparent;border:0;color:var(--mut2);font-size:15px;cursor:pointer;width:28px;height:28px;border-radius:7px;padding:0;line-height:1;flex:0 0 auto}
@@ -207,7 +209,7 @@ button.ghost{background:transparent;border:1px solid var(--line2);color:var(--mu
 .logfilter{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
 .lf{background:var(--bg2);border:1px solid var(--line);color:var(--mut);border-radius:16px;padding:6px 12px;font-family:var(--mono);font-size:11.5px;cursor:pointer;letter-spacing:.3px}
 .lf:active{transform:scale(.95)}
-.lf.on{background:var(--neon);border-color:var(--neon);color:var(--bg);font-weight:700}
+.lf.on{background:var(--neon);border-color:var(--neon);color:var(--on-neon);font-weight:700}
 .urlbar{height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;margin-bottom:8px}
 .urlbarfill{height:100%;background:linear-gradient(90deg,var(--amber),#ff9d4d);transition:width .35s;border-radius:4px}
 .urlsub{font-family:var(--mono);font-size:11px;color:var(--mut)}
@@ -239,10 +241,10 @@ input[type=file]{display:none}
 .caldy.cat-krank::after{background:#ff6b6b}
 .caldy.cat-bereit::after{background:#7fd0ff}
 .caldy.cat-ausgl::after{background:#c084fc}
-.caldy.sel{background:var(--neon);color:var(--bg);border-color:var(--neon)}
+.caldy.sel{background:var(--neon);color:var(--on-neon);border-color:var(--neon)}
 .caldy.sel::after{background:var(--bg)}
-.caldy.in-range{background:rgba(61,255,119,.18);color:var(--ink);border-color:rgba(61,255,119,.25)}
-.caldy.week-sel{background:rgba(61,255,119,.16);border-color:rgba(61,255,119,.22)}
+.caldy.in-range{background:rgba(var(--neon-rgb),.18);color:var(--ink);border-color:rgba(var(--neon-rgb),.25)}
+.caldy.week-sel{background:rgba(var(--neon-rgb),.16);border-color:rgba(var(--neon-rgb),.22)}
 .caldy.week-sel.we{opacity:.7}
 .calsel{font-family:var(--mono);font-size:11px;color:var(--neon-soft);text-align:center;padding:7px 0 2px;margin-top:6px;border-top:1px solid var(--line);letter-spacing:.5px}
 /* Monatskarten */
@@ -268,15 +270,15 @@ input[type=file]{display:none}
 .yrmh>span:first-child{flex:0 0 auto}
 .yrmh .yrmd{color:var(--mut);font-size:10px;letter-spacing:0;text-transform:none;min-width:0;flex:1 1 auto;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .yrgrid{display:flex;flex-wrap:wrap;gap:2px;width:100%}
-.yrdy{flex:0 0 calc((100% - 14px) / 7);height:28px;background:#1a221a;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:#9eaf9d;cursor:pointer;position:relative;border:1px solid transparent;line-height:1;-webkit-tap-highlight-color:transparent;min-width:0;overflow:hidden;font-weight:500;box-sizing:border-box}
-.yrdy.work{background:var(--neon);color:var(--bg)}
+.yrdy{flex:0 0 calc((100% - 14px) / 7);height:28px;background:#1c222b;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:#9ba6b2;cursor:pointer;position:relative;border:1px solid transparent;line-height:1;-webkit-tap-highlight-color:transparent;min-width:0;overflow:hidden;font-weight:500;box-sizing:border-box}
+.yrdy.work{background:var(--neon);color:var(--on-neon)}
 .yrdy.urlaub{background:var(--amber);color:var(--bg)}
 .yrdy.krank{background:#ff6b6b;color:#fff}
 .yrdy.bereit{background:#7fd0ff;color:var(--bg)}
 .yrdy.ausgl{background:#c084fc;color:#fff}
-.yrdy.we{background:#0e130e;color:#566753}
+.yrdy.we{background:#12161d;color:#6e7681}
 .yrdy.hol{background:rgba(255,90,90,.18);color:#ff9a9a}
-.yrdy.none{background:#1a221a;color:#9eaf9d}  /* nicht .empty -- das ist der Leer-Zustand mit 40px Padding */
+.yrdy.none{background:#1c222b;color:#9ba6b2}  /* nicht .empty -- das ist der Leer-Zustand mit 40px Padding */
 .yrdy.other{background:transparent;color:transparent;pointer-events:none}
 .yrdy.today{border-color:var(--neon);box-shadow:0 0 0 1px var(--neon) inset}
 .yrlegend{display:flex;flex-wrap:wrap;gap:8px;font-family:var(--mono);font-size:10px;color:var(--mut);padding:8px 2px 0;border-top:1px solid var(--line);margin-top:6px}
@@ -302,17 +304,55 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .wlhdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
 .wllbl{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;color:var(--neon);font-weight:700}
 .wlkw{font-family:var(--mono);font-size:12px;color:var(--mut)}
-.wldays{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px}
-.wlday{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:7px 4px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--mut)}
-.wlday .wld-wd{font-size:10px;letter-spacing:.8px;color:var(--mut2);margin-bottom:2px}
-.wlday .wld-st{font-size:14px;line-height:1}
-.wlday.done{background:rgba(61,255,119,.1);border-color:var(--neon-dim);color:var(--ink)}
-.wlday.done .wld-st{color:var(--neon)}
-.wlday.today{background:rgba(61,255,119,.05);border-color:var(--neon-soft)}
-.wlday.today .wld-st{color:var(--neon-soft)}
-.wlday.miss{background:rgba(255,93,99,.05);border-color:rgba(255,93,99,.25)}
-.wlday.miss .wld-st{color:#ff6b6b;opacity:.6}
-.wlday.we{opacity:.3}
+/* Wochenstreifen (Eingabe, Ein Tag) */
+.wstrip{display:grid;grid-template-columns:30px repeat(7,minmax(0,1fr)) 30px;gap:3px;align-items:center;margin-bottom:4px}
+.wsnav{height:46px;background:transparent;border:0;color:var(--mut);font-size:22px;cursor:pointer;padding:0}
+.wsnav:active{color:var(--ink)}
+.wsd{height:64px;border:1px solid var(--line);background:var(--bg2);border-radius:14px;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-family:var(--mono);padding:0;min-width:0}
+.wsd .l{font-size:10px;color:var(--mut)}
+.wsd .n{font-size:15px;font-weight:600}
+.wsd.we .l,.wsd.we .n{color:var(--mut2)}
+.wsd.hol .n{color:#ff7e7e}
+.wsd.today{border-color:var(--neon-dim)}
+.wsd.sel{background:var(--neon);border-color:var(--neon)}
+.wsd.sel .l,.wsd.sel .n{color:var(--on-neon)}
+.wsd:active{transform:scale(.94)}
+.wsdot{width:6px;height:6px;border-radius:50%;box-sizing:border-box}
+.wsdot.frueh{background:#3dff77}.wsdot.tag{background:#aaff77}.wsdot.spaet{background:#ff9d4d}.wsdot.andere{background:#7fae7c}
+.wsdot.bereit{background:#7fd0ff}.wsdot.urlaub{background:var(--amber)}.wsdot.krank{background:#ff6b72}.wsdot.ausgl{background:#c084fc}
+.wsdot.planned{border:1.5px solid var(--mut)}
+.wsd.sel .wsdot.planned{border-color:var(--on-neon)}
+.wsd.sel .wsdot:is(.frueh,.tag,.spaet,.andere,.bereit,.urlaub,.krank,.ausgl){box-shadow:0 0 0 1.5px var(--on-neon)}  /* Punkt bleibt auf dem Akzent-Feld sichtbar */
+.wsmonth{display:block;width:100%;min-height:40px;background:transparent;border:0;color:var(--mut);font-family:var(--mono);font-size:11.5px;cursor:pointer;margin-bottom:8px}
+/* Wochenzeitleiste (Diese Woche) */
+.wband{margin-bottom:14px;display:flex;flex-direction:column;gap:6px}
+.wbaxis,.wbrow{display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;align-items:center}
+.wbscale{position:relative;height:12px;font-family:var(--mono);font-size:9.5px;color:var(--mut2)}
+.wbscale span{position:absolute;top:0;transform:translateX(-50%)}
+.wbrows{position:relative;display:flex;flex-direction:column;gap:6px}
+.wbgrid{position:absolute;left:42px;right:0;top:0;bottom:0;pointer-events:none}
+.wbgrid i{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.wbrow{position:relative;cursor:pointer;border-radius:10px}
+.wbrow:focus-visible{outline:2px solid var(--neon-soft);outline-offset:2px}
+.wbd{display:flex;flex-direction:column;line-height:1.15;font-family:var(--mono)}
+.wbd b{font-size:12px;color:var(--ink)}
+.wbd span{font-size:10px;color:var(--mut)}
+.wbrow.today .wbd b{color:var(--neon)}
+.wbt{position:relative;height:32px}
+.wb{position:absolute;top:0;height:32px;border-radius:9px;box-sizing:border-box;display:flex;align-items:center;padding:0 8px;font-family:var(--mono);font-size:10.5px;font-weight:600;color:#04130a;white-space:nowrap;overflow:hidden}
+.wb.frueh{background:#3dff77}.wb.tag{background:#aaff77}.wb.spaet{background:#ff9d4d}.wb.andere{background:#7fae7c}
+.wb.bereit{background:#7fd0ff}.wb.urlaub{background:var(--amber)}.wb.krank{background:#ff6b72;color:#1a0505}.wb.ausgl{background:#c084fc}
+.wb.chip{left:0;right:0;justify-content:center}
+.wb.hol{background:rgba(255,90,90,.16);color:#ff9a9a}
+.wb.miss{background:transparent;border:1.5px dashed rgba(255,107,114,.5);color:var(--red)}
+.wb.plan{background:transparent;color:var(--ink);border:2px dashed var(--mut2)}
+.wb.plan.frueh{border-color:#3dff77;background:rgba(61,255,119,.08)}
+.wb.plan.tag{border-color:#aaff77;background:rgba(170,255,119,.08)}
+.wb.plan.spaet{border-color:#ff9d4d;background:rgba(255,157,77,.08)}
+.wb.plan.urlaub{border-color:var(--amber);background:rgba(255,194,77,.08)}
+.wb.live{box-shadow:0 0 0 2px rgba(var(--neon-rgb),.35)}
+.wnow{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink);border-radius:1px;z-index:2}
+html[data-theme="light"] .wb.plan{color:var(--ink)}
 /* Saldo-Detail-Modal */
 .bdrow{display:grid;grid-template-columns:1fr auto;gap:8px;padding:8px 2px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:13px}
 .bdrow:last-child{border-bottom:0}
@@ -331,14 +371,14 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .card.tapp:hover{border-color:var(--neon-dim)}
 .mcard{cursor:pointer}
 /* Stempeluhr */
-.punchin{background:var(--neon);color:var(--bg);font-size:15px;font-weight:700;letter-spacing:.5px;margin-bottom:4px}
+.punchin{background:var(--neon);color:var(--on-neon);font-size:15px;font-weight:700;letter-spacing:.5px;margin-bottom:4px}
 .punchin:active{transform:scale(.97)}
 .punchor{text-align:center;font-family:var(--mono);font-size:10px;color:var(--mut2);letter-spacing:1px;text-transform:uppercase;margin:10px 0 8px;display:flex;align-items:center;gap:8px}
 .punchor::before,.punchor::after{content:'';flex:1;height:1px;background:var(--line)}
 .punchrun{text-align:center}
 .pr-top{font-family:var(--mono);font-size:13px;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:6px}
 .pr-dot{width:9px;height:9px;border-radius:50%;background:var(--neon);animation:prpulse 1.6s ease-in-out infinite}
-@keyframes prpulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(61,255,119,.5)}50%{opacity:.6;box-shadow:0 0 0 6px rgba(61,255,119,0)}}
+@keyframes prpulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(var(--neon-rgb),.5)}50%{opacity:.6;box-shadow:0 0 0 6px rgba(var(--neon-rgb),0)}}
 .pr-sug{color:var(--mut);font-size:11.5px}
 .pr-elapsed{font-family:var(--mono);font-size:34px;font-weight:700;color:var(--neon);margin:8px 0 6px;letter-spacing:1px}
 .pr-end{font-family:var(--mono);font-size:12.5px;color:var(--mut);margin:0 0 14px;min-height:1.2em}
@@ -351,12 +391,12 @@ details[open] .vsum::before{transform:rotate(90deg)}
 /* Plan-Abfrage in Heute-Karte */
 .planask .platxt{font-family:var(--mono);font-size:13.5px;color:var(--ink);text-align:center;margin-bottom:12px;line-height:1.5}
 .planask .platxt b{color:var(--neon)}
-.planok{background:var(--neon);color:var(--bg);font-weight:700}
+.planok{background:var(--neon);color:var(--on-neon);font-weight:700}
 .planok:active{transform:scale(.97)}
 /* Plan-Editor */
 .plpal{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:12px}
 .plpal button{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:10px 4px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--mut);cursor:pointer}
-.plpal button.on{border-color:var(--neon);color:var(--neon);background:rgba(61,255,119,.08)}
+.plpal button.on{border-color:var(--neon);color:var(--neon);background:rgba(var(--neon-rgb),.08)}
 .plpal button:active{transform:scale(.93)}
 .plwk{display:grid;grid-template-columns:46px repeat(5,1fr);gap:5px;margin-bottom:6px;align-items:stretch}
 .plkwlbl{background:var(--bg2);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:10px;color:var(--mut);display:flex;align-items:center;justify-content:center;cursor:pointer;letter-spacing:.3px}
@@ -370,7 +410,7 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .plday.pc-T .pld-c{color:#aaff77}
 .plday.pc-SP .pld-c{color:#7fd0ff}
 .plday.pc-Ur .pld-c{color:var(--amber)}
-.plday.pc-F{border-color:rgba(61,255,119,.4)}
+.plday.pc-F{border-color:rgba(var(--neon-rgb),.4)}
 .plday.pc-S{border-color:rgba(255,157,77,.4)}
 .plday.pc-T{border-color:rgba(170,255,119,.4)}
 .plday.pc-SP{border-color:rgba(127,208,255,.4)}
@@ -382,7 +422,7 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .plstatus{font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:8px;text-align:center;line-height:1.5}
 .plstatus.err{color:#ff6b6b}
 /* Plan-Ring im Eingabe-Kalender */
-.caldy.planned{box-shadow:inset 0 0 0 1.5px rgba(61,255,119,.45)}
+.caldy.planned{box-shadow:inset 0 0 0 1.5px rgba(var(--neon-rgb),.45)}
 .caldy.planned.has{box-shadow:none}
 .dnote{font-family:var(--mono);font-size:11px;color:var(--amber);margin-top:4px;padding:4px 7px;background:rgba(255,194,77,.08);border-left:2px solid var(--amber);border-radius:3px;line-height:1.35}
 /* Nachtrag-Banner + Wizard */
@@ -404,7 +444,7 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .bfopt:active{transform:scale(.94)}
 .bfopt .bfoptm{font-size:9.5px;font-weight:400;color:var(--mut);margin-top:3px}
 .bfopt.bf-frueh{border-color:var(--neon-dim)}
-.bfopt.bf-frueh:active{background:var(--neon);color:var(--bg)}
+.bfopt.bf-frueh:active{background:var(--neon);color:var(--on-neon)}
 .bfopt.bf-tag{border-color:#5a7a3c}
 .bfopt.bf-tag:active{background:#aaff77;color:var(--bg)}
 .bfopt.bf-spaet{border-color:#8a5527}
@@ -413,16 +453,15 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .bfopt.bfsec:active{background:var(--panel2);color:var(--ink)}
 .bfundo{text-align:center;margin-top:4px}
 .bfedittog{width:100%;background:transparent;border:1px dashed var(--line2);border-radius:9px;color:var(--mut);font-family:var(--mono);font-size:11.5px;padding:8px;cursor:pointer;margin-bottom:8px;letter-spacing:.3px}
-.bfedittog.on{border-style:solid;border-color:var(--neon-dim);color:var(--neon-soft);background:rgba(61,255,119,.05)}
+.bfedittog.on{border-style:solid;border-color:var(--neon-dim);color:var(--neon-soft);background:rgba(var(--neon-rgb),.05)}
 .bfeditrow{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:11px;margin-bottom:8px}
 .bfedithint{font-family:var(--mono);font-size:10px;color:var(--mut2);text-align:center;margin-top:7px;letter-spacing:.3px}
-.bfplanok{background:rgba(61,255,119,.1);border:1px solid var(--neon-dim);color:var(--neon);font-family:var(--mono);font-size:12.5px;font-weight:700}
-.bfplanok:active{background:var(--neon);color:var(--bg)}
-.bfbulk{background:rgba(61,255,119,.07);border:1px solid var(--neon-dim);border-radius:11px;padding:12px;margin-bottom:14px}
+.bfplanok{background:rgba(var(--neon-rgb),.1);border:1px solid var(--neon-dim);color:var(--neon);font-family:var(--mono);font-size:12.5px;font-weight:700}
+.bfplanok:active{background:var(--neon);color:var(--on-neon)}
+.bfbulk{background:rgba(var(--neon-rgb),.07);border:1px solid var(--neon-dim);border-radius:11px;padding:12px;margin-bottom:14px}
 .bfbulktxt{font-family:var(--mono);font-size:12.5px;color:var(--ink);text-align:center;margin-bottom:9px;line-height:1.5}
 .bfbulktxt b{color:var(--neon)}
 .bfbulkhint{font-family:var(--mono);font-size:10px;color:var(--mut2);text-align:center;margin-top:7px;letter-spacing:.2px}
-.wlday.hasplan .wld-st{color:var(--neon-dim)}
 /* Plan-Rückstand */
 .pchdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
 .pclbl{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;color:var(--amber);font-weight:700}
@@ -439,10 +478,10 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .wdinfo span{font-size:11px;color:var(--mut)}
 .wdnet{font-family:var(--mono);font-size:17px;font-weight:700;text-align:right;display:flex;flex-direction:column;line-height:1.1}
 .wdnet small{font-size:9.5px;font-weight:400;color:var(--mut);letter-spacing:.5px;text-transform:uppercase}
-.wdok{min-height:40px;padding:0 12px;border-radius:9px;background:rgba(61,255,119,.1);border:1px solid var(--neon-dim);color:var(--neon-soft);font-family:var(--mono);font-size:11.5px;font-weight:700;cursor:pointer}
-.wdok:active{background:var(--neon);color:var(--bg)}
+.wdok{min-height:40px;padding:0 12px;border-radius:9px;background:rgba(var(--neon-rgb),.1);border:1px solid var(--neon-dim);color:var(--neon-soft);font-family:var(--mono);font-size:11.5px;font-weight:700;cursor:pointer}
+.wdok:active{background:var(--neon);color:var(--on-neon)}
 .otdone{min-height:36px;padding:0 10px;border-radius:8px;background:transparent;border:1px dashed var(--line2);color:var(--mut);font-family:var(--mono);font-size:11px;cursor:pointer}
-.otdone.on{border-style:solid;border-color:var(--neon-dim);color:var(--neon-soft);background:rgba(61,255,119,.07)}
+.otdone.on{border-style:solid;border-color:var(--neon-dim);color:var(--neon-soft);background:rgba(var(--neon-rgb),.07)}
 /* Zu-prüfen Liste */
 .flitem{background:var(--bg2);border:1px solid rgba(255,194,77,.3);border-radius:10px;padding:10px 11px;margin-bottom:8px}
 .flitem:last-child{margin-bottom:0}
@@ -452,8 +491,8 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .fldet{font-family:var(--mono);font-size:11px;color:var(--amber);line-height:1.5;margin-bottom:8px}
 .flacts{display:flex;gap:7px}
 .flacts button{flex:1;font-family:var(--mono);font-size:11px;padding:7px;border-radius:7px;cursor:pointer}
-.flok{background:rgba(61,255,119,.1);border:1px solid var(--neon-dim);color:var(--neon-soft)}
-.flok:active{background:var(--neon);color:var(--bg)}
+.flok{background:rgba(var(--neon-rgb),.1);border:1px solid var(--neon-dim);color:var(--neon-soft)}
+.flok:active{background:var(--neon);color:var(--on-neon)}
 .fledit{background:var(--panel2);border:1px solid var(--line);color:var(--mut)}
 .fledit:active{background:var(--bg2);color:var(--ink)}
 .plantag{font-family:var(--mono);font-size:10.5px;color:var(--amber);background:rgba(255,194,77,.08);border:1px solid rgba(255,194,77,.25);border-radius:8px;padding:6px 10px;margin-bottom:10px;text-align:center;letter-spacing:.3px}
@@ -472,7 +511,7 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .improw .impd{color:var(--mut);white-space:nowrap}
 .improw .impv{color:var(--ink)}
 .improw .impflag{font-size:10px;padding:2px 6px;border-radius:5px;white-space:nowrap}
-.improw.ok .impflag{background:rgba(61,255,119,.12);color:var(--neon-soft)}
+.improw.ok .impflag{background:rgba(var(--neon-rgb),.12);color:var(--neon-soft)}
 .improw.overwrite .impflag{background:rgba(255,194,77,.15);color:var(--amber)}
 .improw.error{opacity:.6}
 .improw.error .impflag{background:rgba(255,93,99,.15);color:#ff6b6b}
@@ -482,11 +521,6 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .impflagdet{font-family:var(--mono);font-size:10px;color:var(--amber);padding:0 9px 7px;margin-top:-3px;line-height:1.5;border-bottom:1px solid var(--line)}
 .bfundo button{background:transparent;border:0;color:var(--mut2);font-family:var(--mono);font-size:11.5px;cursor:pointer;padding:6px 12px;border-radius:6px}
 .bfundo button:active{background:var(--bg2);color:var(--ink)}
-.wlday.clk{cursor:pointer;transition:transform .1s,border-color .15s}
-.wlday.clk:active{transform:scale(.94)}
-.wlday.clk:hover{border-color:var(--neon-soft)}
-.wlday.miss.clk{border-color:rgba(255,93,99,.35)}
-.wlday.miss.clk:hover{border-color:#ff6b6b}
 .wlnums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--line)}
 .wlcell{text-align:center}
 .wlk{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;color:var(--mut2);text-transform:uppercase}
@@ -504,22 +538,22 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .todaysum .neg{color:#ff6b6b}
 .todayquick{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
 .qsh{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 6px;color:var(--ink);font-family:var(--mono);font-size:12.5px;cursor:pointer;text-align:center;font-weight:700;letter-spacing:.5px;transition:transform .1s,background .15s}
-.qsh:active{transform:scale(.95);background:var(--neon);color:var(--bg);border-color:var(--neon)}
+.qsh:active{transform:scale(.95);background:var(--neon);color:var(--on-neon);border-color:var(--neon)}
 .qshtm{font-size:9.5px;color:var(--mut);font-weight:400;margin-top:3px;letter-spacing:0;white-space:pre-line}
 .shiftbtn .shtm{white-space:pre-line}
-.qsh:active .qshtm{color:var(--bg);opacity:.85}
+.qsh:active .qshtm{color:var(--on-neon);opacity:.85}
 /* Compact Quick-Shift Buttons (Tag-Eingabe) */
 .qshifts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:0 0 14px}
 .qshifts .qsh{padding:8px 4px;border-radius:8px;font-size:11px}
 .qshifts .qsh .qshtm{font-size:9px;margin-top:2px}
 .qshifts.hidden{display:none}
 /* Vortag-Vorschlag Banner */
-.prefill{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;background:rgba(61,255,119,.06);border:1px solid var(--neon-dim);border-radius:10px;padding:9px 11px;margin:6px 0 14px}
+.prefill{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;background:rgba(var(--neon-rgb),.06);border:1px solid var(--neon-dim);border-radius:10px;padding:9px 11px;margin:6px 0 14px}
 .prefill .pftxt{font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.4}
 .prefill .pflbl{font-size:9.5px;letter-spacing:1px;color:var(--mut2);text-transform:uppercase}
 .prefill #pfWhen{color:var(--mut)}
 .prefill #pfWhat{color:var(--neon-soft);font-size:11.5px}
-.prefill .pfbtn{background:var(--neon);color:var(--bg);border:0;border-radius:7px;padding:7px 12px;font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.4px;cursor:pointer}
+.prefill .pfbtn{background:var(--neon);color:var(--on-neon);border:0;border-radius:7px;padding:7px 12px;font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.4px;cursor:pointer}
 .prefill .pfbtn:active{transform:scale(.95)}
 .prefill .pfclose{background:transparent;border:0;color:var(--mut2);font-size:14px;cursor:pointer;width:24px;height:24px;border-radius:6px;padding:0;line-height:1}
 .prefill .pfclose:active{background:var(--bg2);color:var(--ink)}
@@ -539,7 +573,7 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .yrdy.work-andere{background:#7fae7c;color:var(--bg)}
 /* Diff-Modus Färbung */
 .yrdy.d-pos2{background:#0f5029;color:var(--ink)}
-.yrdy.d-pos1{background:rgba(61,255,119,.28);color:var(--ink)}
+.yrdy.d-pos1{background:rgba(var(--neon-rgb),.28);color:var(--ink)}
 .yrdy.d-neg1{background:rgba(255,93,99,.22);color:var(--ink)}
 .yrdy.d-neg2{background:#a32229;color:#fff}
 .todayalt{display:flex;justify-content:center;gap:4px;flex-wrap:wrap}
@@ -573,7 +607,7 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .sparkdot{fill:var(--neon);stroke:var(--bg);stroke-width:1.2}
 .forfeit-note{margin-top:10px;padding:8px 11px;border-radius:8px;font-family:var(--mono);font-size:11px;line-height:1.45;letter-spacing:.3px;display:flex;align-items:flex-start;gap:8px}
 .forfeit-note.expiring{background:rgba(255,194,77,.08);border:1px solid rgba(255,194,77,.25);color:var(--amber)}
-.forfeit-note.kept{background:rgba(61,255,119,.07);border:1px solid rgba(61,255,119,.25);color:var(--neon-soft)}
+.forfeit-note.kept{background:rgba(var(--neon-rgb),.07);border:1px solid rgba(var(--neon-rgb),.25);color:var(--neon-soft)}
 .forfeit-note b{color:var(--ink);font-weight:700}
 .forfeit-note .fno-icon{flex:0 0 auto;font-size:13px;line-height:1.2}
 /* Sync-Badge im Header */
@@ -602,12 +636,12 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .owall{flex:1;background:var(--bg2);border:1px solid var(--line2);color:var(--mut);font-family:var(--mono);font-size:11px;padding:9px 6px;border-radius:8px;cursor:pointer;letter-spacing:.3px}
 .owall:active{background:var(--panel2)}
 /* Bottom nav */
-nav{position:fixed;bottom:0;left:0;right:0;z-index:40;background:linear-gradient(180deg,rgba(8,11,8,.85),rgba(8,11,8,.98));backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;padding:8px 6px calc(8px + env(safe-area-inset-bottom));max-width:560px;margin:0 auto}
-nav button{flex:1;background:transparent;border:0;color:var(--mut2);display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 2px;cursor:pointer;font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;text-transform:uppercase}
-nav button .ic{font-size:20px;line-height:1}
-nav button.on{color:var(--neon)}
-nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
-.sr{position:fixed;bottom:80px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:10px;color:var(--amber);z-index:35;pointer-events:none}
+nav{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom));left:12px;right:12px;z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:24px;box-shadow:0 8px 24px -8px rgba(0,0,0,.5);display:flex;padding:6px;max-width:536px;margin:0 auto}
+nav button{flex:1;background:transparent;border:0;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;min-height:48px;border-radius:18px;cursor:pointer;font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.2px}
+nav button .ic{font-size:19px;line-height:1}
+nav button.on{background:var(--neon);color:var(--on-neon)}
+nav button.on .ic{filter:drop-shadow(0 0 8px rgba(var(--neon-rgb),.6))}
+.sr{position:fixed;bottom:96px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:10px;color:var(--amber);z-index:35;pointer-events:none}
 /* ---------- PRINT REPORT ---------- */
 #printReport{display:none}
 @media print{
@@ -664,7 +698,9 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(61,255,119,.6))}
     </div>
 
     <div class="card" id="singleCard">
-      <div id="calTag"></div>
+      <div class="wstrip" id="wStrip"></div>
+      <button type="button" class="wsmonth" id="wsMonth" aria-expanded="false" aria-controls="calTag">▾ Ganzer Monat</button>
+      <div id="calTag" style="display:none"></div>
       <input type="hidden" id="sDate">
       <div class="prefill" id="sPrefill" style="display:none">
         <div class="pftxt"><span class="pflbl">Letzter Eintrag</span> <span id="pfWhen"></span><br><span id="pfWhat"></span></div>
@@ -839,7 +875,7 @@ T T Ur Ur F"></textarea>
         <span class="wllbl">DIESE WOCHE</span>
         <span class="wlkw" id="wlKw">KW —</span>
       </div>
-      <div class="wldays" id="wlDays"></div>
+      <div class="wband" id="wlDays"></div>
       <div class="wlnums">
         <div class="wlcell"><div class="wlk">Ist</div><div class="wlv" id="wlIst">0:00</div></div>
         <div class="wlcell"><div class="wlk">Soll bisher</div><div class="wlv" id="wlSoll">0:00</div></div>
@@ -849,14 +885,15 @@ T T Ur Ur F"></textarea>
       <div class="wlnote" id="wlNote"></div>
     </div>
     <div class="card glow tapp" id="balCard" data-open-bal="1">
+      <div class="balhero">
+        <span class="lab">Gleitzeit-Stand</span>
+        <span class="bal" id="mBal">0:00</span>
+        <span class="balsub" id="mBalSub"></span>
+      </div>
       <div class="sumgrid">
         <div class="sumcell"><div class="k">Soll</div><div class="v zero" id="mSoll">0:00</div></div>
         <div class="sumcell"><div class="k">Ist</div><div class="v" id="mIst">0:00</div></div>
         <div class="sumcell"><div class="k">Saldo</div><div class="v" id="mSaldo">0:00</div></div>
-      </div>
-      <div class="balbar">
-        <span class="lab">Gleitzeit-Stand (kumuliert)</span>
-        <span class="bal" id="mBal">0:00</span>
       </div>
       <div class="forfeit-note" id="forfeitNote" style="display:none"></div>
       <div class="sparkwrap" id="sparkline"></div>
@@ -888,7 +925,7 @@ T T Ur Ur F"></textarea>
         <span><i style="background:#7fd0ff"></i>Bereitschaft</span>
         <span><i style="background:#c084fc"></i>Ausgl/Komp</span>
         <span><i style="background:rgba(255,90,90,.18);border:1px solid rgba(255,90,90,.3)"></i>Feiertag</span>
-        <span><i style="background:#0e130e;border:1px solid var(--line)"></i>WE</span>
+        <span><i style="background:#12161d;border:1px solid var(--line)"></i>WE</span>
       </div>
       <div class="yrlegend" id="yrLegendDiff" style="display:none">
         <span><i style="background:#0f5029"></i>≥ +2h</span>
@@ -896,7 +933,7 @@ T T Ur Ur F"></textarea>
         <span><i style="background:var(--panel);border:1px solid var(--line)"></i>±0 / leer</span>
         <span><i style="background:#ff5d63;opacity:.4"></i>0 bis −2h</span>
         <span><i style="background:#a32229"></i>≤ −2h</span>
-        <span><i style="background:#0e130e;border:1px solid var(--line)"></i>WE/Feiertag</span>
+        <span><i style="background:#12161d;border:1px solid var(--line)"></i>WE/Feiertag</span>
       </div>
     </details>
   </section>
@@ -1217,7 +1254,7 @@ function persist(){
   lastSaveTs = DB.lastSaveTs;
   updateSaveSub(true);
   if(booted&&typeof renderBfBanner==='function'&&bfState===null)renderBfBanner();
-  if(booted)scheduleSync();
+  if(booted){applyAccent();scheduleSync();}
 }
 let bfState=null;  /* Nachtrag-Wizard State — früh deklariert wegen persist-Hook */
 let booted=false;  /* persist() darf den Banner erst rendern wenn HOLIDAYS & Co. initialisiert sind (seedTemplate läuft davor) */
@@ -1313,6 +1350,22 @@ function shiftTimes(id,dow){
   return {k:t[0],g:t[1],label:s.label};
 }
 function shiftTxt(id,dow){const t=shiftTimes(id,dow);return t?`${t.k}–${t.g}`:'';}
+function todayShiftId(){
+  /* Schicht von heute: Eintrag (nach Kommen-Zeit), sonst laufende Stempelung, sonst Plan. null = keine/andere */
+  const k=dateKey(new Date()),e=DB.entries[k];
+  if(e&&e.cat==='Arbeit'){const c=classifyArbeit(e);return c==='andere'?null:c;}
+  if(DB.pending&&DB.pending.k===k){
+    const g=guessShift(DB.pending.kommen);
+    const s=g&&SHIFTS.find(x=>g.label.startsWith(x.label));
+    return s?s.id:null;
+  }
+  return {F:'frueh',SP:'frueh',T:'tag',S:'spaet'}[DB.plan[k]]||null;
+}
+function applyAccent(){
+  /* Akzentfarbe nach heutiger Schicht -- Früh ist der Standard (Grün), nur Tag/Spät setzen data-shift (siehe CSS) */
+  const id=todayShiftId(),el=document.documentElement;
+  if(id&&id!=='frueh')el.setAttribute('data-shift',id);else el.removeAttribute('data-shift');
+}
 function fillShiftLabels(){
   /* Zeiten an den statischen Schicht-Buttons aus SHIFTS setzen (HTML enthält nur Platzhalter).
      Tagesabhängige Spät-Zeit im Tag-Formular/Nachtrag setzen danach updateSpaetLabel / bfShowCurrent. */
@@ -1489,11 +1542,7 @@ function makeCal(id, mode, opts){
     if(entry){
       cls.push('has');
       if(entry.note)cls.push('hasnote');
-      if(entry.cat==='Urlaub'||entry.cat==='Urlaub 1/2')cls.push('cat-urlaub');
-      else if(entry.cat==='Krank')cls.push('cat-krank');
-      else if(entry.cat==='Bereitschaft')cls.push('cat-bereit');
-      else if(entry.cat==='Ausgleichszeit'||entry.cat==='Kompensationstag Grp1'||entry.cat==='Kompensationstag Grp2')cls.push('cat-ausgl');
-      else if(entry.cat==='Arbeit')cls.push('cat-'+classifyArbeit(entry));
+      cls.push('cat-'+entryKind(entry));
     }else if(DB.plan&&DB.plan[k]){cls.push('planned');}
     if(state.mode==='single' && state.selection===k)cls.push('sel');
     if(state.mode==='range' && state.selection){
@@ -1758,6 +1807,7 @@ function loadSingle(){
   updateSpaetLabel();
   updatePauseRow();
   renderPrefill();
+  renderWeekStrip();
 }
 document.getElementById('sDate').addEventListener('change',()=>{loadSingle();liveSingle();});
 loadSingle();liveSingle();
@@ -2078,6 +2128,7 @@ function renderDash(){
   const istEl=document.getElementById('mIst');istEl.textContent=minToH(sumIst);
   const saEl=document.getElementById('mSaldo');saEl.textContent=sgn(sumDiff);saEl.className='v '+(sumDiff>0?'pos':sumDiff<0?'neg':'zero');
   const bal=runningBalanceUpTo(curMonth);const balEl=document.getElementById('mBal');balEl.textContent=sgn(bal);balEl.className='bal '+(bal>0?'pos':bal<0?'neg':'zero');
+  document.getElementById('mBalSub').textContent=`${MONTHS[curMonth]}: ${sgn(sumDiff)} bisher`;
   /* Verfall-Hinweis für aktuellen Monat */
   const fnEl=document.getElementById('forfeitNote');
   const thr=DB.settings.forfeitMin||0;
@@ -2265,7 +2316,43 @@ function resolveForgotten(save){
   renderDash();renderTodayCard();renderWeekLive();
   refreshCals();
 }
-function refreshCals(){[calTag,calRange].forEach(c=>c&&c.refresh());}
+function refreshCals(){[calTag,calRange].forEach(c=>c&&c.refresh());renderWeekStrip();}
+/* Wochenstreifen im Tag-Formular: die Woche des gewählten Tages, Punkte = Eintrag (Schichtfarbe) bzw. Plan (Ring) */
+function selectDay(k){
+  calTag.setSelection(k);
+  document.getElementById('sDate').value=k;
+  loadSingle();liveSingle();   /* loadSingle zeichnet den Streifen neu */
+}
+function renderWeekStrip(){
+  const el=document.getElementById('wStrip');if(!el)return;
+  const sel=document.getElementById('sDate').value;if(!sel)return;
+  const mon=mondayOf(keyDate(sel)),todayK=dateKey(new Date());
+  const WDN=['Mo','Di','Mi','Do','Fr','Sa','So'];
+  let h='<button type="button" class="wsnav" data-w="-7" aria-label="Vorherige Woche">‹</button>';
+  for(let i=0;i<7;i++){
+    const d=new Date(mon);d.setDate(mon.getDate()+i);const k=dateKey(d);
+    const e=DB.entries[k];
+    const cls=['wsd'];
+    if(k===sel)cls.push('sel');
+    if(i>=5)cls.push('we');
+    if(HOLIDAYS.includes(k)||HALFDAYS.includes(k))cls.push('hol');
+    if(k===todayK)cls.push('today');
+    const dot=e?`<i class="wsdot ${entryKind(e)}"></i>`:(DB.plan[k]?'<i class="wsdot planned"></i>':'<i class="wsdot"></i>');
+    h+=`<button type="button" class="${cls.join(' ')}" data-k="${k}" aria-label="${WDN[i]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}."${k===sel?' aria-current="date"':''}><span class="l">${WDN[i]}</span><span class="n">${d.getDate()}</span>${dot}</button>`;
+  }
+  h+='<button type="button" class="wsnav" data-w="7" aria-label="Nächste Woche">›</button>';
+  el.innerHTML=h;
+}
+document.getElementById('wStrip').onclick=ev=>{
+  const b=ev.target.closest('button');if(!b)return;
+  if(b.dataset.k)selectDay(b.dataset.k);
+  else if(b.dataset.w){const d=keyDate(document.getElementById('sDate').value);d.setDate(d.getDate()+parseInt(b.dataset.w));selectDay(dateKey(d));}
+};
+document.getElementById('wsMonth').onclick=()=>{
+  const c=document.getElementById('calTag'),open=c.style.display==='none';
+  c.style.display=open?'':'none';
+  const b=document.getElementById('wsMonth');b.setAttribute('aria-expanded',String(open));b.textContent=open?'▴ Monat schließen':'▾ Ganzer Monat';
+};
 function openDay(k){
   /* Tag k im Tag-Formular öffnen (aus Übersicht, Heatmap, Prüfliste, Wochenleiste, Heute-Karte) */
   document.querySelector('nav button[data-view="v-input"]').click();
@@ -2492,6 +2579,41 @@ function renderFlagCatch(){
   list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openDay(b.dataset.edit));
   list.querySelectorAll('[data-goto]').forEach(el=>el.onclick=()=>openDay(el.dataset.goto));
 }
+const BAND0=4*60,BANDN=20*60;  /* Zeitachse der Wochenzeitleiste: 04:00–24:00 */
+function bandPct(m){return Math.max(0,Math.min(100,(m-BAND0)/BANDN*100));}
+function entryKind(e){
+  /* Farbklasse eines Eintrags: frueh|tag|spaet|andere (Arbeit), bereit, urlaub, krank, ausgl */
+  if(!e)return '';
+  if(e.cat==='Urlaub'||e.cat==='Urlaub 1/2')return 'urlaub';
+  if(e.cat==='Krank')return 'krank';
+  if(e.cat==='Bereitschaft')return 'bereit';
+  if(e.cat==='Ausgleichszeit'||e.cat==='Kompensationstag Grp1'||e.cat==='Kompensationstag Grp2')return 'ausgl';
+  return classifyArbeit(e);
+}
+function weekBar(k,e,d,isToday,isPast,isHol,nowMin){
+  /* Ein Balken (oder Hinweis-Feld) für einen Tag der Wochenzeitleiste */
+  const bar=(s,en,kind,txt,extra)=>{
+    if(en<=s)en=1440;  /* über Mitternacht: bis zum Rand */
+    const l=bandPct(s),w=Math.max(bandPct(en)-l,7);
+    return `<div class="wb ${kind}${extra||''}" style="left:${l}%;width:${w}%">${txt}</div>`;
+  };
+  const chip=(kind,txt)=>`<div class="wb chip ${kind}">${txt}</div>`;
+  if(e&&e.k&&e.g&&catDef(e.cat).times)return bar(hToMin(e.k),hToMin(e.g),entryKind(e),`${e.k}–${e.g}`);
+  if(e)return chip(entryKind(e),esc(catShort(e.cat)));
+  if(isToday&&DB.pending&&DB.pending.k===k){
+    const g=guessShift(DB.pending.kommen),sh=g&&SHIFTS.find(x=>g.label.startsWith(x.label));
+    return bar(hToMin(DB.pending.kommen),Math.max(hToMin(DB.pending.kommen)+1,nowMin),sh?sh.id:'andere','läuft',' live');
+  }
+  const code=DB.plan[k];
+  if(code&&!isHol){
+    const pe=planToEntry(code,d.getDay());
+    if(pe&&pe.k)return bar(hToMin(pe.k),hToMin(pe.g),entryKind(pe),`Plan ${pe.k}`,' plan');
+    if(pe)return chip(entryKind(pe)+' plan','Plan: '+esc(catShort(pe.cat)));
+  }
+  if(isHol)return chip('hol','Feiertag');
+  if(isPast)return chip('miss','fehlt');
+  return '';
+}
 function renderWeekLive(){
   const card=document.getElementById('weekLive');if(!card)return;
   const today=new Date();
@@ -2502,28 +2624,25 @@ function renderWeekLive(){
   document.getElementById('wlKw').textContent=`KW ${pad(wk)}`;
   let ist=0,soll=0,diff=0;
   const todayK=dateKey(today);
-  const daysHtml=[];
+  const rows=[];
   const WDS=['Mo','Di','Mi','Do','Fr'];
+  const nowMin=today.getHours()*60+today.getMinutes();
   for(let i=0;i<5;i++){
     const d=new Date(mon);d.setDate(mon.getDate()+i);
     const k=dateKey(d);const e=DB.entries[k];const r=compute(k,e);
     const isToday=k===todayK;
     const isPast=d<today&&!isToday;
-    let state='future';let sym='–';
-    if(e){state='done';sym=e.cat==='Krank'?'K':e.cat==='Urlaub'||e.cat==='Urlaub 1/2'?'U':e.cat==='Bereitschaft'?'B':'✓';}
-    else if(isToday){state='today';sym='●';}
-    else if(isPast)state='miss';
-    else if(DB.plan[k]){state='future hasplan';sym=DB.plan[k];}
-    if(HOLIDAYS.includes(k)){state='we';sym='F';}
+    const isHol=HOLIDAYS.includes(k);
     if(r.ist!=null)ist+=r.ist;
     if(r.diff!=null){soll+=r.soll;diff+=r.diff;}
-    const clickable=state!=='we';
-    daysHtml.push(`<div class="wlday ${state}${clickable?' clk':''}" data-k="${k}"><div class="wld-wd">${WDS[i]}</div><div class="wld-st">${sym}</div></div>`);
+    rows.push(`<div class="wbrow${isToday?' today':''}" data-k="${k}" role="button" tabindex="0" aria-label="${WDS[i]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}. öffnen"><div class="wbd"><b>${WDS[i]}</b><span>${pad(d.getDate())}.</span></div><div class="wbt">${weekBar(k,e,d,isToday,isPast,isHol,nowMin)}${isToday&&nowMin>=BAND0&&nowMin<=BAND0+BANDN?`<i class="wnow" style="left:${bandPct(nowMin)}%"></i>`:''}</div></div>`);
   }
-  document.getElementById('wlDays').innerHTML=daysHtml.join('');
+  const ticks=[0,4,8,12,16].map(h=>`<span style="left:${h/20*100}%${h===0?';transform:none':''}">${pad(4+h)}</span>`).join('')+'<span style="left:80%">20</span><span style="right:0;left:auto;transform:none">24</span>';
+  document.getElementById('wlDays').innerHTML=`<div class="wbaxis"><span></span><div class="wbscale">${ticks}</div></div><div class="wbrows"><div class="wbgrid">${[20,40,60,80].map(x=>`<i style="left:${x}%"></i>`).join('')}</div>${rows.join('')}</div>`;
   /* Klick-Handler: springt zu Tag-Eingabe */
-  document.querySelectorAll('#wlDays .wlday.clk').forEach(el=>{
+  document.querySelectorAll('#wlDays .wbrow').forEach(el=>{
     el.onclick=()=>openDay(el.dataset.k);
+    el.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();openDay(el.dataset.k);}};
   });
   document.getElementById('wlIst').textContent=minToH(ist);
   document.getElementById('wlSoll').textContent=minToH(Math.max(0,soll));
@@ -3097,7 +3216,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostn
 function applyTheme(t){
   document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');
   const meta=document.querySelector('meta[name="theme-color"]');
-  if(meta)meta.setAttribute('content',t==='light'?'#f2f5f0':'#0a0e0a');
+  if(meta)meta.setAttribute('content',t==='light'?'#eef1f5':'#0e1116');
   document.querySelectorAll('#themeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.th===t));
 }
 document.querySelectorAll('#themeSeg button').forEach(b=>b.onclick=()=>{
@@ -3812,6 +3931,7 @@ function applyMerged(mg,conf){
   conf.forEach(c=>logEvent({type:'settings',detail:`Sync-Konflikt ${c.k}: lokal „${fmtEntry(c.local)}" durch „${fmtEntry(c.remote)}" aus Dropbox ersetzt`}));
   syncSnap=buildSnap();
   Store.save(DB);
+  applyAccent();
   renderDash();renderBfBanner();
   refreshCals();
 }
@@ -4467,6 +4587,13 @@ if(!Store.ok)document.getElementById('storageWarn').style.display='block';
 updateSaveSub(false);
 fillShiftLabels();updateSpaetLabel();
 booted=true;
+applyAccent();
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)return;
+  /* App wieder geöffnet (evtl. Tageswechsel über Nacht): Akzent + Heute-Karte auffrischen, außer es wird gerade getippt */
+  applyAccent();
+  if(!document.getElementById('todayBody').contains(document.activeElement))renderTodayCard();
+});
 renderDash();  /* App startet auf der Übersicht (Heute-Karte) */
 renderDbxUi();
 /* Kurzbefehle erst nach dem ersten Abgleich: sonst könnte "laut Plan" einen Eintrag vom anderen Gerät überschreiben */
