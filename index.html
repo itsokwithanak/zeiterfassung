@@ -67,6 +67,23 @@ header{position:sticky;top:0;z-index:30;background:rgba(14,17,22,.92);backdrop-f
 .view.on>:nth-child(2){animation-delay:.03s}.view.on>:nth-child(3){animation-delay:.06s}.view.on>:nth-child(4){animation-delay:.09s}
 .view.on>:nth-child(5){animation-delay:.12s}.view.on>:nth-child(6){animation-delay:.15s}.view.on>:nth-child(n+7){animation-delay:.18s}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}}
+/* Monatsabschluss */
+.cclhdr{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.cclhdr select{width:auto;min-width:140px;padding:9px 34px 9px 12px;font-size:14px;font-family:var(--sans);font-weight:600}
+.mcrow{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.mcrow:last-child{border-bottom:0}
+.mcdot{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700}
+.mcrow.ok .mcdot{background:rgba(var(--neon-rgb),.16);color:var(--neon)}
+.mcrow.open .mcdot{background:rgba(255,194,77,.16);color:var(--amber)}
+.mcrow.open .mctxt{color:var(--ink)}
+.mcrow.ok .mctxt{color:var(--mut)}
+.mcact{min-height:36px;padding:0 12px;border-radius:9px;background:transparent;border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:11.5px;cursor:pointer}
+.mcact:active{background:var(--panel2)}
+.mcsum{font-family:var(--mono);font-size:12px;color:var(--mut);line-height:1.6;margin:10px 0 12px;padding:10px 12px;background:var(--bg2);border:1px solid var(--line);border-radius:12px}
+.mcsum b{color:var(--ink)}
+.mcsum .mcstate{display:block;font-family:var(--sans);font-size:13.5px;font-weight:700;margin-bottom:2px}
+.mcsum .mcstate.ok{color:var(--neon)}
+.mcsum .mcstate.open{color:var(--amber)}
 /* Brückentage */
 .bridgecard{padding:14px 16px}
 .bridgecard .vsum{font-size:12px;letter-spacing:1px}
@@ -153,8 +170,9 @@ button.ghost{background:transparent;border:1px solid var(--line2);color:var(--mu
 .wkh{display:flex;justify-content:space-between;align-items:center;margin:0 2px 8px;font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--mut)}
 .wkh .ws{font-weight:700}
 .day{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:8px}
-.day.ot{border-color:var(--neon-dim);box-shadow:inset 3px 0 0 var(--neon)}
-.day.un{box-shadow:inset 3px 0 0 var(--red-dim)}
+.day{border-left:3px solid var(--line2)}
+.day.k-frueh{border-left-color:#3dff77}.day.k-tag{border-left-color:#aaff77}.day.k-spaet{border-left-color:#ff9d4d}.day.k-andere{border-left-color:#7fae7c}
+.day.k-bereit{border-left-color:#7fd0ff}.day.k-urlaub{border-left-color:var(--amber)}.day.k-krank{border-left-color:#ff6b72}.day.k-ausgl{border-left-color:#c084fc}
 .day .dt{flex:0 0 46px;text-align:center}
 .day .dt .wd{font-family:var(--mono);font-size:10px;color:var(--mut);text-transform:uppercase}
 .day .dt .dd{font-family:var(--mono);font-size:19px;font-weight:700;line-height:1}
@@ -483,6 +501,11 @@ html[data-theme="light"] .wb.plan{color:var(--ink)}
 .bfopt.bf-spaet:active{background:#ff9d4d;color:var(--bg)}
 .bfopt.bfsec{font-weight:400;font-size:12px;color:var(--mut);padding:10px 6px}
 .bfopt.bfsec:active{background:var(--panel2);color:var(--ink)}
+.bfweek{border:1px dashed var(--line2);border-radius:14px;padding:10px;margin-bottom:10px}
+.bfweeklbl{font-family:var(--mono);font-size:11px;letter-spacing:.5px;color:var(--mut);margin:0 2px 8px;text-transform:uppercase}
+.bfweekbtns{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.bfweekbtns button{min-height:44px;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-family:var(--sans);font-weight:600;font-size:12.5px;cursor:pointer}
+.bfweekbtns button:active{background:var(--neon);color:var(--on-neon);border-color:var(--neon)}
 .bfundo{text-align:center;margin-top:4px}
 .bfedittog{width:100%;background:transparent;border:1px dashed var(--line2);border-radius:9px;color:var(--mut);font-family:var(--mono);font-size:11.5px;padding:8px;cursor:pointer;margin-bottom:8px;letter-spacing:.3px}
 .bfedittog.on{border-style:solid;border-color:var(--neon-dim);color:var(--neon-soft);background:rgba(var(--neon-rgb),.05)}
@@ -874,6 +897,10 @@ T T Ur Ur F"></textarea>
       <div class="pwatxt"><span class="icw" data-ico="calendar"></span> <b id="yearHintTxt"></b><br><span class="pwaMini" id="yearHintSub"></span></div>
       <button type="button" class="bfbtn" id="yearHintBtn">Umstellen</button>
     </div>
+    <div class="pwahint" id="closeHint" style="display:none">
+      <div class="pwatxt"><span class="icw" data-ico="file"></span> <b id="closeHintTxt"></b><br><span class="pwaMini" id="closeHintSub"></span></div>
+      <button type="button" class="bfbtn" id="closeHintBtn">Öffnen</button>
+    </div>
     <div class="pwahint" id="bkpHint" style="display:none">
       <div class="pwatxt"><span class="icw" data-ico="save"></span> <b id="bkpHintTxt"></b><br><span class="pwaMini">Deine Daten liegen nur auf diesem Gerät.</span></div>
       <button type="button" class="bfbtn" id="bkpHintBtn">Sichern</button>
@@ -1006,6 +1033,15 @@ T T Ur Ur F"></textarea>
   <!-- EXPORT -->
   <section class="view" id="v-export">
     <h2 class="vt">Export → Vorlage</h2>
+
+    <div class="card glow" id="closeCard">
+      <div class="cclhdr"><label class="fl" style="margin:0">Monatsabschluss</label><select id="mcMonth" aria-label="Monat"></select></div>
+      <div id="mcList"></div>
+      <div class="mcsum" id="mcSum"></div>
+      <button class="act" id="mcExcel" type="button">Excel</button>
+      <button class="act ghost" id="mcPdf" type="button" style="margin-top:8px"><span class="icw" data-ico="printer"></span> PDF-Report zum Unterschreiben</button>
+      <div class="hint" id="mcHint"></div>
+    </div>
 
     <div class="card" style="background:transparent;border-color:var(--line);padding:13px 14px">
       <div class="note" style="line-height:1.55"><b style="color:var(--neon-soft)"><span class="icw" data-ico="bulb"></span> Gespeichert wird automatisch</b> — jede Änderung (auf Wunsch auch in deiner Dropbox). Excel und PDF erzeugst du hier bewusst per Knopfdruck, z. B. zum Monatsende.</div>
@@ -1218,6 +1254,16 @@ T T Ur Ur F"></textarea>
       <div class="bfkw" id="bfKw">KW 03</div>
     </div>
     <button type="button" class="act bfplanok" id="bfPlanOk" style="display:none;margin-bottom:8px"></button>
+    <div class="bfweek" id="bfWeekRow" style="display:none">
+      <div class="bfweeklbl" id="bfWeekLbl"></div>
+      <div class="bfweekbtns">
+        <button type="button" data-bw="frueh">Früh</button>
+        <button type="button" data-bw="tag">Tag</button>
+        <button type="button" data-bw="spaet">Spät</button>
+        <button type="button" data-bw="Urlaub">Urlaub</button>
+        <button type="button" data-bw="Krank">Krank</button>
+      </div>
+    </div>
     <div class="bfgrid">
       <button type="button" class="bfopt bf-frueh" data-bf="frueh"><div>FRÜH</div><div class="bfoptm">06:00–14:30</div></button>
       <button type="button" class="bfopt bf-tag" data-bf="tag"><div>TAG</div><div class="bfoptm">06:30–15:00</div></button>
@@ -1242,7 +1288,7 @@ T T Ur Ur F"></textarea>
       <div class="bfedithint">Schicht-Button antippen = Zeiten vorbefüllen, dann anpassen</div>
     </div>
     <div class="bfundo" id="bfUndoRow" style="display:none">
-      <button type="button" id="bfUndo">↶ Letzten rückgängig</button>
+      <button type="button" id="bfUndo">↶ Letzten Schritt rückgängig</button>
     </div>
     <button class="act ghost" id="bfPause" style="margin-top:12px"><span class="icw" data-ico="pause"></span> Pause — später weitermachen</button>
   </div>
@@ -2279,6 +2325,7 @@ function renderDash(){
   monthSel.value=curMonth;
   document.getElementById('mcYear').textContent=DB.settings.year;
   renderYearHint();
+  renderCloseHint();
   renderBkpHint();
   renderTodayCard();
   renderPlanCatch();
@@ -2949,7 +2996,7 @@ document.querySelectorAll('#yrMode button').forEach(b=>b.onclick=()=>{
 });
 function dayRow(k){
   const e=DB.entries[k];const r=compute(k,e);const d=keyDate(k);
-  let cls='day';if(r.diff>0)cls+=' ot';else if(r.diff<0)cls+=' un';
+  let cls='day';if(e)cls+=' k-'+entryKind(e);
   let tm,meta='';
   const badges=[];
   if(r.hol)badges.push('<span class="badge hol">Feiertag</span>');
@@ -3144,6 +3191,25 @@ function renderBfBanner(){
   banner.style.display='flex';
   document.getElementById('bfCount').textContent=missing.length;
 }
+function bfPush(keys,kind){bfState.hist.push({keys,kind});}  /* ein Schritt = 1 Tag oder eine ganze Woche (für Rückgängig) */
+function bfWeekGroup(){
+  /* Offene Tage ab der aktuellen Position, die in derselben Woche liegen (die Queue ist nach Datum sortiert) */
+  const {queue,idx}=bfState;if(idx>=queue.length)return [];
+  const wk=dateKey(mondayOf(keyDate(queue[idx])));const g=[];
+  for(let i=idx;i<queue.length;i++){if(dateKey(mondayOf(keyDate(queue[i])))!==wk)break;g.push(queue[i]);}
+  return g;
+}
+function bfWeekApply(choice){
+  const g=bfWeekGroup();if(g.length<2)return;
+  g.forEach(k=>{
+    const t=shiftTimes(choice,keyDate(k).getDay());
+    DB.entries[k]=t?{cat:'Arbeit',k:t.k,g:t.g}:{cat:choice};  /* Spät am Freitag bekommt automatisch die Fr-Zeit */
+    bfState.done.push(k);
+  });
+  bfPush(g,'done');
+  bfState.idx+=g.length;
+  bfShowCurrent();
+}
 function bfShowCurrent(){
   const {queue,idx}=bfState;
   if(idx>=queue.length){bfFinish();return;}
@@ -3156,7 +3222,15 @@ function bfShowCurrent(){
   document.getElementById('bfDate').textContent=`${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
   document.getElementById('bfKw').textContent=`KW ${pad(isoWeek(d))}`;
   document.getElementById('bfSpaetTm').textContent=shiftTxt('spaet',d.getDay());
-  document.getElementById('bfUndoRow').style.display=(bfState.done.length||bfState.skipped.length)?'block':'none';
+  document.getElementById('bfUndoRow').style.display=bfState.hist.length?'block':'none';
+  /* Ganze Woche (bzw. Rest der Woche) auf einmal anbieten, wenn mind. 2 offene Tage derselben Woche folgen */
+  const wg=bfWeekGroup(),wr=document.getElementById('bfWeekRow');
+  if(wg.length>=2){
+    const mon=mondayOf(d);let full=0;
+    for(let i=0;i<5;i++){const x=new Date(mon);x.setDate(mon.getDate()+i);const xk=dateKey(x);if(!HOLIDAYS.includes(xk)&&!HALFDAYS.includes(xk))full++;}
+    document.getElementById('bfWeekLbl').textContent=`${wg.length===full?'Ganze Woche':'Rest der Woche'} · KW ${pad(isoWeek(d))} · ${wg.length} Tage`;
+    wr.style.display='block';
+  }else wr.style.display='none';
   /* Plan-Hinweis: falls für diesen Tag ein Plan existiert */
   const planBtn=document.getElementById('bfPlanOk');
   const pc=DB.plan[k];
@@ -3167,7 +3241,7 @@ function bfShowCurrent(){
       const e=planToEntry(pc,d.getDay());
       if(!e)return;
       DB.entries[k]=e;
-      bfState.done.push(k);
+      bfState.done.push(k);bfPush([k],'done');
       bfState.idx++;
       bfShowCurrent();
     };
@@ -3181,7 +3255,7 @@ function bfAnswer(choice){
   const k=queue[idx];
   const d=keyDate(k);
   if(choice==='skip'){
-    bfState.skipped.push(k);
+    bfState.skipped.push(k);bfPush([k],'skipped');
   }else if(shiftTimes(choice,1)){
     const t=shiftTimes(choice,d.getDay());
     if(bfEditMode){
@@ -3191,7 +3265,7 @@ function bfAnswer(choice){
       return;  /* NICHT weiter — wartet auf Eintragen-Button */
     }
     DB.entries[k]={cat:'Arbeit',k:t.k,g:t.g};
-    bfState.done.push(k);
+    bfState.done.push(k);bfPush([k],'done');
   }else{
     /* Kategorie ohne Zeiten: Urlaub/Krank/Bereitschaft/Ausgleichszeit */
     if(choice==='Bereitschaft'){
@@ -3200,7 +3274,7 @@ function bfAnswer(choice){
     }else{
       DB.entries[k]={cat:choice};
     }
-    bfState.done.push(k);
+    bfState.done.push(k);bfPush([k],'done');
   }
   bfState.idx++;
   bfShowCurrent();
@@ -3213,7 +3287,7 @@ function bfCustomSave(){
   if(!kk||!gg){toast('Kommen & Gehen angeben');return;}
   if(kk===gg){toast('Kommen und Gehen sind gleich');return;}  /* Gehen < Kommen = über Mitternacht, wie im Tag-Formular */
   DB.entries[k]={cat:'Arbeit',k:kk,g:gg};
-  bfState.done.push(k);
+  bfState.done.push(k);bfPush([k],'done');
   bfState.idx++;
   /* Felder leeren für nächsten Tag, Edit-Modus bleibt an */
   document.getElementById('bfK').value='';
@@ -3221,12 +3295,12 @@ function bfCustomSave(){
   bfShowCurrent();
 }
 function bfUndo(){
-  if(bfState.idx<=0)return;
-  bfState.idx--;
-  const k=bfState.queue[bfState.idx];
-  /* aus done oder skipped entfernen + Eintrag löschen falls angelegt */
-  const di=bfState.done.indexOf(k);if(di>-1){bfState.done.splice(di,1);delete DB.entries[k];}
-  const si=bfState.skipped.indexOf(k);if(si>-1)bfState.skipped.splice(si,1);
+  /* letzten Schritt (Tag oder ganze Woche) zurücknehmen */
+  const st=bfState.hist.pop();if(!st)return;
+  const arr=st.kind==='done'?bfState.done:bfState.skipped;
+  st.keys.forEach(k=>{const i=arr.indexOf(k);if(i>-1)arr.splice(i,1);if(st.kind==='done')delete DB.entries[k];});
+  const at=bfState.queue.indexOf(st.keys[0]);
+  if(at>-1)bfState.idx=at;
   bfShowCurrent();
 }
 function bfFinish(){
@@ -3255,7 +3329,7 @@ function bfFinish(){
 document.getElementById('bfStart').onclick=()=>{
   const missing=findMissingWorkdays();
   if(!missing.length){toast('Keine offenen Tage');renderBfBanner();return;}
-  bfState={queue:missing,idx:0,done:[],skipped:[]};
+  bfState={queue:missing,idx:0,done:[],skipped:[],hist:[]};
   /* Edit-Mode Reset beim Start */
   bfEditMode=false;
   document.getElementById('bfEditTog').classList.remove('on');
@@ -3290,6 +3364,7 @@ document.getElementById('bfBulkApply').onclick=()=>{
   });
   /* Aus der Queue entfernen: idx vorwärts über alle geplanten, verbleibende Queue neu aufbauen ohne die erledigten */
   bfState.queue=bfState.queue.filter((k,i)=>i<bfState.idx||!DB.plan[k]||!planned.includes(k));
+  bfState.hist=[];  /* Queue hat sich verändert: Rückgängig nur für spätere Schritte */
   logEvent({type:'bulk',label:'Nachtrag: Plan-Bulk-Übernahme',n,kept:0,skipped:0,applied});
   persist();
   document.getElementById('bfBulkPlan').style.display='none';
@@ -3309,6 +3384,7 @@ document.getElementById('bfEditTog').onclick=()=>{
 document.getElementById('bfCustomSave').onclick=bfCustomSave;
 document.querySelectorAll('#bfModal .bfopt').forEach(b=>b.onclick=()=>bfAnswer(b.dataset.bf));
 document.getElementById('bfUndo').onclick=bfUndo;
+document.querySelectorAll('#bfWeekRow [data-bw]').forEach(b=>b.onclick=()=>bfWeekApply(b.dataset.bw));
 document.getElementById('bfPause').onclick=()=>{
   /* Pause = wie finish, aber mit anderen Worten */
   bfFinish();
@@ -4501,6 +4577,7 @@ async function loadTplFromDropbox(){
   }catch(e){console.error('[Vorlage]',e);}
 }
 function updateExportState(){
+  renderClose();
   const aCard=document.getElementById('aCard');
   const aStatus=document.getElementById('aStatus');
   const pvCard=document.getElementById('pvCard');
@@ -4627,8 +4704,9 @@ async function buildExportFile(){
 }
 async function runExport(btn,busyTxt,deliver){
   /* gemeinsamer Ablauf für Download und Dropbox: Datei bauen -> ausliefern -> Export protokollieren */
-  if(!tplFiles){toast('Erst Vorlage laden');return;}
+  if(!tplFiles){toast('Erst Vorlage laden');return false;}
   btn.disabled=true;const old=btn.textContent;btn.textContent=busyTxt;
+  let ok=false;
   try{
     const f=await buildExportFile();
     const where=await deliver(f);
@@ -4636,22 +4714,113 @@ async function runExport(btn,busyTxt,deliver){
     logEvent({type:'export',n:f.n,file:where});
     persist();
     updateExportState();
+    ok=true;
   }catch(e){toast('⚠ '+e.message);}
   btn.disabled=false;btn.textContent=old;
+  return ok;
 }
 document.getElementById('expNotes').onchange=e=>{DB.settings.exportNotes=e.target.value;persist();updateExportState();};
-document.getElementById('dlBtn').onclick=()=>runExport(document.getElementById('dlBtn'),'… wird erstellt',async f=>{
+const deliverDownload=async f=>{
   const url=URL.createObjectURL(f.blob);const a=document.createElement('a');
   a.href=url;a.download=f.name;document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),4000);
   toast('✓ Datei erstellt — in Excel öffnen & prüfen');
   return f.name;
-});
-document.getElementById('dbxExpBtn').onclick=()=>runExport(document.getElementById('dbxExpBtn'),'… wird hochgeladen',async f=>{
+};
+const deliverDropbox=async f=>{
   await dbxUploadFile(DBX_EXPORT_DIR+'/'+f.name,f.blob);
   toast('☁ In Dropbox gespeichert: Exporte/'+f.name);
   return 'Dropbox: Exporte/'+f.name;
-});
+};
+document.getElementById('dlBtn').onclick=()=>runExport(document.getElementById('dlBtn'),'… wird erstellt',deliverDownload);
+document.getElementById('dbxExpBtn').onclick=()=>runExport(document.getElementById('dbxExpBtn'),'… wird hochgeladen',deliverDropbox);
+
+/* ---------- Monatsabschluss: Prüfliste + Excel/PDF ---------- */
+function closeKey(m){return `${DB.settings.year}-${pad(m+1)}`;}
+function closeStatus(m){
+  /* offene Punkte eines Monats im aktiven Jahr */
+  const y=DB.settings.year,today=new Date();today.setHours(12,0,0,0);
+  const inM=k=>{const d=keyDate(k);return d.getFullYear()===y&&d.getMonth()===m;};
+  return {
+    missing:findMissingWorkdays().filter(inM),
+    flagged:findFlaggedEntries().filter(f=>inM(f.k)),
+    weeks:weekNets().filter(x=>x.month===m&&Math.round(x.net)!==0&&!DB.weekDone[x.id]&&x.fri<=today)
+  };
+}
+function closeDefaultMonth(){
+  /* Standard: laufender Monat; in den ersten Tagen eines Monats der vorige (da schließt man ab) */
+  const t=new Date(),y=DB.settings.year;
+  if(t.getFullYear()!==y)return t.getFullYear()>y?11:0;
+  return (t.getDate()<=5&&t.getMonth()>0)?t.getMonth()-1:t.getMonth();
+}
+function markClosed(m){
+  DB.settings.closedMonths=Object.assign({},DB.settings.closedMonths,{[closeKey(m)]:Date.now()});
+  persist();renderClose();renderCloseHint();
+}
+function renderClose(){
+  const card=document.getElementById('closeCard');if(!card)return;
+  const sel=document.getElementById('mcMonth');
+  if(!sel.options.length){sel.innerHTML=MONTHS.map((n,i)=>`<option value="${i}">${n}</option>`).join('');sel.value=closeDefaultMonth();}
+  const m=+sel.value,st=closeStatus(m);
+  const cnt=(n,one,many)=>`${n} ${n===1?one:many}`;
+  const rows=[
+    {ok:!st.missing.length,txt:st.missing.length?cnt(st.missing.length,'Werktag ohne Eintrag','Werktage ohne Eintrag'):'Alle Werktage haben einen Eintrag',act:st.missing.length?['Nachtragen','nachtrag']:null},
+    {ok:!st.flagged.length,txt:st.flagged.length?cnt(st.flagged.length,'Eintrag zu prüfen','Einträge zu prüfen'):'Nichts zu prüfen',act:st.flagged.length?['Ansehen','flags']:null},
+    {ok:!st.weeks.length,txt:st.weeks.length?cnt(st.weeks.length,'Woche noch nicht übertragen','Wochen noch nicht übertragen'):'Alle Wochen-Stunden übertragen',act:st.weeks.length?['Alle übertragen','weeks']:null},
+    {ok:!!tplFiles,txt:tplFiles?'Excel-Vorlage geladen':'Excel-Vorlage fehlt',act:tplFiles?null:['Wählen','tpl']}
+  ];
+  document.getElementById('mcList').innerHTML=rows.map(r=>`<div class="mcrow ${r.ok?'ok':'open'}"><span class="mcdot">${r.ok?'✓':'!'}</span><span class="mctxt">${r.txt}</span>${r.act?`<button type="button" class="mcact" data-mc="${r.act[1]}">${r.act[0]}</button>`:'<span></span>'}</div>`).join('');
+  const open=rows.filter(r=>!r.ok).length,b=monthBreakdown(m),closed=(DB.settings.closedMonths||{})[closeKey(m)];
+  const cd=closed?new Date(closed):null;
+  document.getElementById('mcSum').innerHTML=`<span class="mcstate ${open?'open':'ok'}">${open?cnt(open,'Punkt offen','Punkte offen'):'Bereit zum Abgeben'}</span>${MONTHS[m]}: Ist <b>${minToH(b.arbeitIst)}</b> · Monatssaldo <b>${sgn(b.saldo)}</b> · Gleitzeit-Stand <b>${sgn(runningBalanceUpTo(m))}</b>${cd?`<br>✓ Excel exportiert am ${pad(cd.getDate())}.${pad(cd.getMonth()+1)}. ${pad(cd.getHours())}:${pad(cd.getMinutes())}`:''}`;
+  document.getElementById('mcExcel').textContent=dbxConnected()&&tplFiles?'Excel in Dropbox speichern':'Excel-Datei erstellen';
+  document.getElementById('mcHint').textContent='Die Excel ist dein offizielles Formular (alle Monate des Jahres, Spalte „Bemerkung" nach Einstellung unten). Das PDF ist die App-Fassung mit Unterschriftszeilen.';
+}
+document.getElementById('mcMonth').onchange=renderClose;
+document.getElementById('mcList').onclick=ev=>{
+  const b=ev.target.closest('[data-mc]');if(!b)return;
+  const m=+document.getElementById('mcMonth').value;
+  const goDash=id=>{document.querySelector('nav button[data-view="v-dash"]').click();setTimeout(()=>{const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},60);};
+  if(b.dataset.mc==='nachtrag')document.getElementById('bfStart').click();
+  else if(b.dataset.mc==='flags')goDash('flagCatch');
+  else if(b.dataset.mc==='tpl')document.getElementById('fileLbl').scrollIntoView({behavior:'smooth',block:'center'});
+  else if(b.dataset.mc==='weeks'){
+    const ids=closeStatus(m).weeks.map(x=>x.id);ids.forEach(id=>setWeekDone(id,true));
+    renderClose();renderWeekDone();renderOT();
+    toast(`✓ ${ids.length} Wochen als übertragen markiert`,()=>{ids.forEach(id=>setWeekDone(id,false));renderClose();renderWeekDone();renderOT();});
+  }
+};
+document.getElementById('mcExcel').onclick=async()=>{
+  if(!tplFiles){toast('Erst die Excel-Vorlage wählen (weiter unten, Schritt 1)');document.getElementById('fileLbl').scrollIntoView({behavior:'smooth',block:'center'});return;}
+  const useDbx=dbxConnected(),btn=document.getElementById('mcExcel');
+  const ok=await runExport(btn,useDbx?'… wird hochgeladen':'… wird erstellt',useDbx?deliverDropbox:deliverDownload);
+  if(ok)markClosed(+document.getElementById('mcMonth').value);
+};
+document.getElementById('mcPdf').onclick=()=>{
+  document.getElementById('repMonth').value=document.getElementById('mcMonth').value;
+  document.getElementById('repBtn').click();
+};
+/* Hinweis in der Übersicht: ab dem 25. bis zum 5. des Folgemonats, solange der Monat nicht abgeschlossen ist */
+function closeHintMonth(){
+  const t=new Date();if(t.getFullYear()!==DB.settings.year)return null;
+  const m=t.getDate()>=25?t.getMonth():(t.getDate()<=5&&t.getMonth()>0?t.getMonth()-1:null);
+  return (m===null||(DB.settings.closedMonths||{})[closeKey(m)])?null:m;
+}
+function renderCloseHint(){
+  const el=document.getElementById('closeHint');if(!el)return;
+  const m=closeHintMonth();
+  if(m===null){el.style.display='none';return;}
+  const st=closeStatus(m),n=st.missing.length+st.flagged.length+st.weeks.length;
+  document.getElementById('closeHintTxt').textContent=`Monatsabschluss ${MONTHS[m]}`;
+  document.getElementById('closeHintSub').textContent=n?`${n} Punkt${n===1?'':'e'} noch offen`:'Alles geprüft – bereit zum Abgeben';
+  el.dataset.m=m;el.style.display='flex';
+}
+document.getElementById('closeHintBtn').onclick=()=>{
+  const m=document.getElementById('closeHint').dataset.m;
+  document.querySelector('nav button[data-view="v-export"]').click();
+  document.getElementById('mcMonth').value=m;renderClose();
+  window.scrollTo({top:0,behavior:'smooth'});
+};
 
 /* ---------- Verlauf / Log ---------- */
 function fmtEntry(e){
