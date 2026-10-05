@@ -983,6 +983,13 @@ T T Ur Ur F"></textarea>
     <div class="card glow" id="aCard" style="display:none">
       <label class="fl">2 · Datei erzeugen</label>
       <div id="aStatus" class="statline">…</div>
+      <div class="field"><label class="fl">Spalte „Bemerkung" in der Excel</label>
+        <select id="expNotes">
+          <option value="nominus">Nur bei „Kein Minus"-Tagen</option>
+          <option value="all">Alle Notizen</option>
+          <option value="none">Leer lassen</option>
+        </select>
+      </div>
       <button class="act" id="dlBtn">⤓ Befüllte Excel-Datei jetzt erstellen</button>
       <button class="act ghost" id="dbxExpBtn" style="margin-top:8px;display:none">☁ In Dropbox speichern (Ordner „Exporte")</button>
       <div class="hint" id="dlHint" style="margin-top:10px"><b>⚠ Test-Hinweis:</b> Einmal in Excel öffnen und prüfen, ob Zeiten &amp; Summen stimmen. Wenn was nicht passt, sag Bescheid.</div>
@@ -4303,12 +4310,21 @@ document.getElementById('tplFile').onchange=async ev=>{
   ev.target.value='';
 };
 
+function exportRemark(e){
+  /* Text für die Excel-Spalte "Bemerkung" (Q): je nach Einstellung nur Kein-Minus-Tage, alle Notizen oder nichts */
+  const mode=DB.settings.exportNotes||'nominus';
+  if(mode==='none')return '';
+  const parts=[];
+  if(e.noMinus)parts.push('Kein Minus – Ausfall nicht selbst verschuldet');
+  if(e.note&&(mode==='all'||e.noMinus))parts.push(e.note);
+  return parts.join(' · ');
+}
 function exportPlan(){ // [{month, k, label, kommen, gehen, write}]
   const plan=[];
   for(const k in DB.entries){const d=keyDate(k);if(d.getFullYear()!==DB.settings.year)continue;
     const e=DB.entries[k];const cd=catDef(e.cat);const row=d.getDate()+5;
     plan.push({m:d.getMonth(),row,k,date:`${pad(d.getDate())}.${pad(d.getMonth()+1)}.`,
-      kommen:(cd.times&&e.k)?e.k:null,gehen:(cd.times&&e.g)?e.g:null,write:cd.write,cat:e.cat});}
+      kommen:(cd.times&&e.k)?e.k:null,gehen:(cd.times&&e.g)?e.g:null,write:cd.write,cat:e.cat,remark:exportRemark(e)});}
   return plan.sort((a,b)=>a.k<b.k?-1:1);
 }
 function renderPreview(){updateExportState();}
@@ -4343,6 +4359,7 @@ function updateExportState(){
     lastTxt.innerHTML='<span>📤 Noch nicht exportiert</span>';
   }
   document.getElementById('dbxExpBtn').style.display=dbxConnected()?'':'none';
+  document.getElementById('expNotes').value=DB.settings.exportNotes||'nominus';
   // Wenn keine Vorlage geladen — Aktions-Card verstecken (vorher einmal in der Dropbox nachsehen)
   if(!tplFiles){aCard.style.display='none';pvCard.style.display='none';loadTplFromDropbox();return;}
   aCard.style.display='';
@@ -4366,7 +4383,7 @@ function updateExportState(){
     html+=`<div class="pvmonth">${MONTHS[m]} · ${byM[m].length} Tage</div>`;
     byM[m].forEach(p=>{
       let t=p.kommen?`${p.kommen} – ${p.gehen}`:`<span style="color:var(--amber)">${catShort(p.cat)}</span>`;
-      html+=`<div class="pvrow"><span class="pd">${p.date}</span><span class="pt">${t}</span></div>`;
+      html+=`<div class="pvrow"><span class="pd">${p.date}</span><span class="pt">${t}${p.remark?` <span style="color:var(--mut)">· ${esc(p.remark)}</span>`:''}</span></div>`;
     });
   });
   body.innerHTML=html;
@@ -4417,12 +4434,13 @@ async function buildExportFile(){
     const docs={}; // name -> {path,doc,sC,sE,sB}
     function getDoc(month){const nm=MONTHS[month];if(docs[nm])return docs[nm];const p=pathByName[nm];if(!p||!files[p])throw new Error('Blatt "'+nm+'" nicht gefunden.');
       const d=dp.parseFromString(new TextDecoder().decode(files[p]),'application/xml');
-      docs[nm]={path:p,doc:d,sC:styleInCol(d,'C'),sE:styleInCol(d,'E'),sB:styleInCol(d,'B')};return docs[nm];}
+      docs[nm]={path:p,doc:d,sC:styleInCol(d,'C'),sE:styleInCol(d,'E'),sB:styleInCol(d,'B'),sQ:styleInCol(d,'Q')};return docs[nm];}
     plan.forEach(p=>{
       const D=getDoc(p.m);
       if(p.kommen!=null)setCell(D.doc,'C'+p.row,'num',hToMin(p.kommen)/1440,D.sC);
       if(p.gehen!=null)setCell(D.doc,'E'+p.row,'num',hToMin(p.gehen)/1440,D.sE);
       if(p.write)setCell(D.doc,'B'+p.row,'str',p.write,D.sB);
+      if(p.remark)setCell(D.doc,'Q'+p.row,'str',p.remark,D.sQ);  /* Spalte Q = Bemerkung */
     });
     /* Feiertage als feste B-Werte schreiben — schadet nicht und behebt den OnlyOffice-Cache-0-Fall.
        Schreibt im str-Formel-Format das Excel akzeptiert. */
@@ -4463,6 +4481,7 @@ async function runExport(btn,busyTxt,deliver){
   }catch(e){toast('⚠ '+e.message);}
   btn.disabled=false;btn.textContent=old;
 }
+document.getElementById('expNotes').onchange=e=>{DB.settings.exportNotes=e.target.value;persist();updateExportState();};
 document.getElementById('dlBtn').onclick=()=>runExport(document.getElementById('dlBtn'),'… wird erstellt',async f=>{
   const url=URL.createObjectURL(f.blob);const a=document.createElement('a');
   a.href=url;a.download=f.name;document.body.appendChild(a);a.click();a.remove();
