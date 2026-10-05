@@ -59,6 +59,36 @@ header{position:sticky;top:0;z-index:30;background:rgba(14,17,22,.92);backdrop-f
 .logo .sub{font-family:var(--sans);font-size:10.5px;color:var(--mut);letter-spacing:.4px;font-weight:500}
 .gear{margin-left:auto;background:var(--panel);border:1px solid var(--line);color:var(--mut);width:38px;height:38px;border-radius:11px;font-size:18px;cursor:pointer;display:grid;place-items:center}
 .gear:active{background:var(--panel2)}
+.morebtn{display:block;width:100%;min-height:42px;background:transparent;border:1px dashed var(--line2);border-radius:12px;color:var(--mut);font-family:var(--mono);font-size:11.5px;cursor:pointer;margin-top:8px}
+.morebtn:active{background:var(--panel2);color:var(--ink)}
+/* Eingang der Karten: leicht gestaffelt beim Öffnen einer Ansicht */
+@keyframes cardin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.view.on>.card,.view.on>.mcards,.view.on>#weeks,.view.on>details{animation:cardin .42s cubic-bezier(.2,.7,.2,1) both}
+.view.on>:nth-child(2){animation-delay:.03s}.view.on>:nth-child(3){animation-delay:.06s}.view.on>:nth-child(4){animation-delay:.09s}
+.view.on>:nth-child(5){animation-delay:.12s}.view.on>:nth-child(6){animation-delay:.15s}.view.on>:nth-child(n+7){animation-delay:.18s}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}}
+/* Brückentage */
+.bridgecard{padding:14px 16px}
+.bridgecard .vsum{font-size:12px;letter-spacing:1px}
+.brcount{margin-left:auto;color:var(--mut);letter-spacing:0;text-transform:none;font-size:11px}
+.brrow{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.brrow:last-of-type{border-bottom:0}
+.brdate{display:flex;flex-direction:column;font-family:var(--mono)}
+.brdate b{font-size:13px;color:var(--ink)}
+.brdate span{font-size:11px;color:var(--neon-soft)}
+.brneed{grid-column:1;font-size:12px;color:var(--mut);line-height:1.4}
+.brneed b{color:var(--ink)}
+.brneed .warn{color:var(--amber)}
+.brrow .wdok{grid-column:2;grid-row:1/3;align-self:center}
+.brrow .brdone{grid-column:2;grid-row:1/3;align-self:center;font-family:var(--mono);font-size:11px;color:var(--neon-soft)}
+.brnote{font-size:11px;color:var(--mut2);margin-top:10px;line-height:1.5}
+/* Symbole */
+.ico{width:1.15em;height:1.15em;vertical-align:-.2em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.icw{display:inline-flex;vertical-align:-.2em}
+nav button .ic{display:flex}
+nav button .ic .ico{width:22px;height:22px}
+.gear .ico{width:20px;height:20px}
+.gear{display:grid;place-items:center}
 /* Views */
 main{padding-top:16px}
 .view{display:none;animation:fade .25s ease}
@@ -142,6 +172,7 @@ button.ghost{background:transparent;border:1px solid var(--line2);color:var(--mu
 .iconbtn:active{background:var(--panel2)}
 .empty{text-align:center;color:var(--mut2);padding:40px 20px;font-size:13.5px;font-family:var(--mono)}
 .empty .big{font-size:30px;margin-bottom:10px;opacity:.5}
+.empty .big svg{width:34px;height:34px}
 /* Wochen-Aufschlüsselung */
 .otweek{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden}
 .otwh{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--panel2);border-bottom:1px solid var(--line);gap:10px}
@@ -297,9 +328,9 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .statline.warn{border-color:#5a4a1f;color:var(--amber)}
 .statline.warn b{color:var(--amber)}
 /* Heute-Karte */
-.todayhdr{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
-.todaylbl{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;color:var(--neon);font-weight:700}
-.todaydate{font-family:var(--mono);font-size:13px;color:var(--ink)}
+.todayhdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.todaylbl{font-family:var(--mono);font-size:10.5px;letter-spacing:1.5px;color:var(--neon);font-weight:700;background:rgba(var(--neon-rgb),.14);padding:4px 9px;border-radius:8px}
+.todaydate{font-family:var(--sans);font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
 /* Diese Woche live */
 .wlhdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
 .wllbl{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;color:var(--neon);font-weight:700}
@@ -490,8 +521,10 @@ html[data-theme="light"] .wb.plan{color:var(--ink)}
 .fldate{font-family:var(--mono);font-size:12.5px;color:var(--ink);font-weight:700}
 .flval{font-family:var(--mono);font-size:11.5px;color:var(--mut)}
 .fldet{font-family:var(--mono);font-size:11px;color:var(--amber);line-height:1.5;margin-bottom:8px}
-.flacts{display:flex;gap:7px;flex-wrap:wrap}
-.flacts .flnm{flex:1 1 100%;background:rgba(255,194,77,.1);border:1px solid rgba(255,194,77,.35);color:var(--amber);min-height:40px}
+.flacts{display:flex;gap:7px}
+.flacts .flnm{flex:1.35;white-space:nowrap;background:rgba(255,194,77,.1);border:1px solid rgba(255,194,77,.35);color:var(--amber);min-height:40px}
+.flacts button{min-height:40px}
+.flacts .ico{width:13px;height:13px}
 .flacts .flnm:active{background:var(--amber);color:var(--bg)}
 .flacts button{flex:1;font-family:var(--mono);font-size:11px;padding:7px;border-radius:7px;cursor:pointer}
 .flok{background:rgba(var(--neon-rgb),.1);border:1px solid var(--neon-dim);color:var(--neon-soft)}
@@ -641,7 +674,7 @@ html[data-theme="light"] .wb.plan{color:var(--ink)}
 /* Bottom nav */
 nav{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom));left:12px;right:12px;z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:24px;box-shadow:0 8px 24px -8px rgba(0,0,0,.5);display:flex;padding:6px;max-width:536px;margin:0 auto}
 nav button{flex:1;background:transparent;border:0;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;min-height:48px;border-radius:18px;cursor:pointer;font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.2px}
-nav button .ic{font-size:19px;line-height:1}
+nav button .ic{line-height:1}
 nav button.on{background:var(--neon);color:var(--on-neon)}
 nav button.on .ic{filter:drop-shadow(0 0 8px rgba(var(--neon-rgb),.6))}
 .sr{position:fixed;bottom:96px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:10px;color:var(--amber);z-index:35;pointer-events:none}
@@ -665,6 +698,8 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(var(--neon-rgb),.6))}
   #printReport .prsum tr.total td{border-top:1.2pt solid #000;border-bottom:none;font-weight:bold;font-size:9pt}
   #printReport .prfoot{font-size:6.8pt;color:#888;margin-top:6pt;display:flex;justify-content:space-between;border-top:.4pt solid #ccc;padding-top:3pt;page-break-inside:avoid}
   #printReport .prnote{font-style:italic;color:#666;font-size:6.8pt}
+  #printReport .prsign{display:flex;gap:28pt;margin-top:26pt;page-break-inside:avoid;break-inside:avoid}
+  #printReport .prsign div{flex:1;border-top:.6pt solid #000;padding-top:2pt;font-size:7pt;color:#444}
   #printReport .prbottom{page-break-inside:avoid;break-inside:avoid}
   @page{margin:9mm 10mm}
 }
@@ -676,7 +711,7 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(var(--neon-rgb),.6))}
     <span class="ak">AK</span>
     <div><div class="ttl">ZEIT</div><div class="sub" id="saveSub">Shots from the AK · Arbeitszeit</div></div>
   </div>
-  <button class="gear" id="gearBtn" aria-label="Einstellungen">⚙</button>
+  <button class="gear" id="gearBtn" aria-label="Einstellungen"><span data-ico="gear"></span></button>
 </div></div></header>
 
 <main class="wrap">
@@ -759,7 +794,7 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(var(--neon-rgb),.6))}
     </div><!-- /entryWrap -->
 
     <div class="card" id="planCard" style="display:none">
-      <div class="plantag">📋 Dienstplan — trägt keine Ist-Zeit ein</div>
+      <div class="plantag"><span class="icw" data-ico="clipboard"></span> Dienstplan — trägt keine Ist-Zeit ein</div>
       <div class="field"><label class="fl">Monat</label><select id="planMonth"></select></div>
       <div class="seg" id="planSeg" style="margin-bottom:12px">
         <button data-ps="pick" class="on">Auswahl</button>
@@ -793,7 +828,7 @@ T T Ur Ur F"></textarea>
         <div class="field"><label class="fl">Zeilen-Position (Fallback)</label><input type="text" id="planRowIn" placeholder="z.B. -2 für vorletzte Zeile" inputmode="numeric"></div>
         <div class="note" style="font-size:11.5px;margin:0 0 12px">Der Foto-Import sucht zuerst deinen Namen. Wird er nicht erkannt, greift die Positions-Angabe: positive Zahl = von oben, negativ = von unten (-1 = letzte, -2 = vorletzte Zeile).</div>
         <input type="file" id="planPhoto" accept="image/*" style="display:none">
-        <button class="act ghost" id="planPhotoBtn" style="margin:0;padding:10px">📷 Dienstplan-Foto einlesen</button>
+        <button class="act ghost" id="planPhotoBtn" style="margin:0;padding:10px"><span class="icw" data-ico="camera"></span> Dienstplan-Foto einlesen</button>
         <div class="plstatus" id="planStatus" style="display:none"></div>
       </div>
 
@@ -805,7 +840,7 @@ T T Ur Ur F"></textarea>
     </div>
 
     <div class="card" id="importCard" style="display:none">
-      <div class="plantag">📝 Ist-Import — tatsächliche Zeiten und Abwesenheiten (kein Dienstplan)</div>
+      <div class="plantag"><span class="icw" data-ico="note"></span> Ist-Import — tatsächliche Zeiten und Abwesenheiten (kein Dienstplan)</div>
       <div class="imphint">Ein Eintrag pro Zeile: <code>DATUM ZEIT ZEIT</code> oder <code>DATUM KATEGORIE</code></div>
       <textarea id="impText" class="imptxt" rows="10" placeholder="2026-01-05 06:00 14:30
 2026-01-06 Urlaub
@@ -832,15 +867,15 @@ T T Ur Ur F"></textarea>
   <!-- ÜBERSICHT -->
   <section class="view on" id="v-dash">
     <div class="pwahint" id="pwaHint" style="display:none">
-      <div class="pwatxt">📱 <b>Als App installieren</b> für Offline-Nutzung & Vollbild<br><span class="pwaMini">iOS: Teilen → „Zum Home-Bildschirm" · Android: Menü → „App installieren"</span></div>
+      <div class="pwatxt"><span class="icw" data-ico="phone"></span> <b>Als App installieren</b> für Offline-Nutzung & Vollbild<br><span class="pwaMini">iOS: Teilen → „Zum Home-Bildschirm" · Android: Menü → „App installieren"</span></div>
       <button class="pwaX" id="pwaDismiss" aria-label="Schließen">✕</button>
     </div>
     <div class="pwahint" id="yearHint" style="display:none">
-      <div class="pwatxt">📅 <b id="yearHintTxt"></b><br><span class="pwaMini" id="yearHintSub"></span></div>
+      <div class="pwatxt"><span class="icw" data-ico="calendar"></span> <b id="yearHintTxt"></b><br><span class="pwaMini" id="yearHintSub"></span></div>
       <button type="button" class="bfbtn" id="yearHintBtn">Umstellen</button>
     </div>
     <div class="pwahint" id="bkpHint" style="display:none">
-      <div class="pwatxt">💾 <b id="bkpHintTxt"></b><br><span class="pwaMini">Deine Daten liegen nur auf diesem Gerät.</span></div>
+      <div class="pwatxt"><span class="icw" data-ico="save"></span> <b id="bkpHintTxt"></b><br><span class="pwaMini">Deine Daten liegen nur auf diesem Gerät.</span></div>
       <button type="button" class="bfbtn" id="bkpHintBtn">Sichern</button>
     </div>
     <h2 class="vt">Übersicht</h2>
@@ -867,7 +902,7 @@ T T Ur Ur F"></textarea>
     </div>
     <div class="card" id="planCatch" style="display:none">
       <div class="pchdr">
-        <span class="pclbl">📋 PLAN-RÜCKSTAND</span>
+        <span class="pclbl"><span class="icw" data-ico="clipboard"></span> PLAN-RÜCKSTAND</span>
         <span class="pccount" id="pcCount"></span>
       </div>
       <div class="pcdays" id="pcDays"></div>
@@ -882,7 +917,7 @@ T T Ur Ur F"></textarea>
     </div>
     <div class="card" id="weekDoneCard" style="display:none">
       <div class="pchdr">
-        <span class="pclbl">⏱ STUNDEN ÜBERTRAGEN?</span>
+        <span class="pclbl"><span class="icw" data-ico="clock"></span> STUNDEN ÜBERTRAGEN?</span>
         <span class="pccount" id="wdCount"></span>
       </div>
       <div id="wdList"></div>
@@ -907,6 +942,10 @@ T T Ur Ur F"></textarea>
       <div class="cap" style="margin:0 0 8px">Abwesenheiten <span id="absYear"></span></div>
       <div id="absBody"></div>
     </div>
+    <details class="card bridgecard" id="bridgeCard">
+      <summary class="vsum"><span class="icw" data-ico="bridge"></span> Brückentage <span class="brcount" id="brCount"></span></summary>
+      <div id="brBody"></div>
+    </details>
     <div class="card" id="shiftMix" style="display:none"></div>
     <div class="cap" style="margin:14px 2px 6px">Monate <span id="mcYear" style="color:var(--mut2)"></span></div>
     <div id="mcards" class="mcards"></div>
@@ -958,8 +997,8 @@ T T Ur Ur F"></textarea>
       <div id="otList"></div>
     </div>
     <div class="row2">
-      <button class="act ghost" id="otCopy" style="margin:0">📋 Liste kopieren</button>
-      <button class="act ghost" id="otPrint" style="margin:0">🖨 Als PDF</button>
+      <button class="act ghost" id="otCopy" style="margin:0"><span class="icw" data-ico="copy"></span> Liste kopieren</button>
+      <button class="act ghost" id="otPrint" style="margin:0"><span class="icw" data-ico="printer"></span> Als PDF</button>
     </div>
     <div class="hint">Nur Wochen, deren Gesamt-Ist übers Wochen-Soll geht (40 h, bzw. weniger bei Feiertag/½-Tag). Ausgeglichene Wochen tauchen nicht auf — genau dieser Netto-Überschuss kommt auf den Zettel.</div>
   </section>
@@ -969,14 +1008,14 @@ T T Ur Ur F"></textarea>
     <h2 class="vt">Export → Vorlage</h2>
 
     <div class="card" style="background:transparent;border-color:var(--line);padding:13px 14px">
-      <div class="note" style="line-height:1.6"><b style="color:var(--neon-soft)">💡 Zur Klarstellung:</b> Deine Eingaben werden bei jeder Änderung <b>sofort &amp; automatisch in der App gespeichert</b> (siehe Status oben im Header). Ein Browser am Handy darf aber aus Sicherheitsgründen <b>nicht direkt</b> in die Excel-Datei schreiben — der Datei-Export ist deshalb ein bewusster Knopfdruck wenn du sie abgeben willst (z.B. monatlich).</div>
+      <div class="note" style="line-height:1.55"><b style="color:var(--neon-soft)"><span class="icw" data-ico="bulb"></span> Gespeichert wird automatisch</b> — jede Änderung (auf Wunsch auch in deiner Dropbox). Excel und PDF erzeugst du hier bewusst per Knopfdruck, z. B. zum Monatsende.</div>
     </div>
 
     <div class="card">
       <label class="fl">1 · Vorlage laden</label>
-      <label class="filebtn" id="fileLbl" for="tplFile">📄 Arbeitszeiterfassung (.xlsx) wählen</label>
+      <label class="filebtn" id="fileLbl" for="tplFile"><span class="icw" data-ico="file"></span> Arbeitszeiterfassung (.xlsx) wählen</label>
       <input type="file" id="tplFile" accept=".xlsx">
-      <div id="lastExportTxt" class="statline" style="margin-top:12px;margin-bottom:0;justify-content:center">📤 Noch nicht exportiert</div>
+      <div id="lastExportTxt" class="statline" style="margin-top:12px;margin-bottom:0;justify-content:center"><span class="icw" data-ico="upload"></span> Noch nicht exportiert</div>
       <div class="note" style="margin-top:10px">Bitte als <b>.xlsx</b> (in Excel: <b>Speichern unter → .xlsx</b>). Die Original-<b>.xlsb</b> kann der Browser nicht sauber beschreiben.</div>
     </div>
 
@@ -1006,7 +1045,7 @@ T T Ur Ur F"></textarea>
       <label class="fl">Monats-Report (PDF)</label>
       <div class="row2" style="margin-bottom:12px">
         <div class="field" style="margin:0"><select id="repMonth"></select></div>
-        <button class="act ghost" id="repBtn" style="margin:0;padding:11px">🖨 Report erzeugen</button>
+        <button class="act ghost" id="repBtn" style="margin:0;padding:11px"><span class="icw" data-ico="printer"></span> Report erzeugen</button>
       </div>
       <div class="note" style="margin:0">Öffnet den Druckdialog — dort „Als PDF speichern" wählen. Sauberes Schwarz-auf-Weiß-Layout mit allen Tagen, Summen und Saldo-Breakdown.</div>
     </div>
@@ -1029,11 +1068,11 @@ T T Ur Ur F"></textarea>
 </main>
 
 <nav>
-  <button data-view="v-input"><span class="ic">⌨</span>Eingabe</button>
-  <button data-view="v-dash" class="on"><span class="ic">▦</span>Übersicht</button>
-  <button data-view="v-ot"><span class="ic">▲</span>Überstd.</button>
-  <button data-view="v-export"><span class="ic">⤓</span>Export</button>
-  <button data-view="v-log"><span class="ic">📜</span>Verlauf</button>
+  <button data-view="v-input"><span class="ic" data-ico="plus"></span>Eingabe</button>
+  <button data-view="v-dash" class="on"><span class="ic" data-ico="grid"></span>Übersicht</button>
+  <button data-view="v-ot"><span class="ic" data-ico="bars"></span>Überstd.</button>
+  <button data-view="v-export"><span class="ic" data-ico="download"></span>Export</button>
+  <button data-view="v-log"><span class="ic" data-ico="history"></span>Verlauf</button>
 </nav>
 
 <div class="sr" id="storageWarn" style="display:none">⚠ Speicher gesperrt — Daten gehen beim Neuladen verloren</div>
@@ -1048,12 +1087,12 @@ T T Ur Ur F"></textarea>
     </div>
 
     <div class="seg" id="themeSeg" style="margin-bottom:16px">
-      <button data-th="dark" class="on">🌙 Dark</button>
-      <button data-th="light">☀️ Light</button>
+      <button data-th="dark" class="on"><span class="icw" data-ico="moon"></span> Dark</button>
+      <button data-th="light"><span class="icw" data-ico="sun"></span> Light</button>
     </div>
 
     <details class="sdsec" open>
-      <summary>📅 Jahr & Arbeitszeit</summary>
+      <summary><span class="icw" data-ico="calendar"></span> Jahr & Arbeitszeit</summary>
       <div class="sdbody">
         <div class="field" style="margin-top:10px"><label class="fl">Aktives Jahr</label>
           <select id="setYear"></select>
@@ -1070,7 +1109,7 @@ T T Ur Ur F"></textarea>
     </details>
 
     <details class="sdsec">
-      <summary>⚖️ Gleitzeit & Verfall</summary>
+      <summary><span class="icw" data-ico="scale"></span> Gleitzeit & Verfall</summary>
       <div class="sdbody">
         <div class="field" style="margin-top:10px"><label class="fl">Verfall-Grenze pro Monat (HH:MM, 0:00 = aus)</label><input type="text" id="setForfeit" placeholder="2:00" inputmode="text"></div>
         <div class="note" style="font-size:11.5px;margin:0 0 12px">Saldo zwischen 0:00 und der Grenze verfällt am Monatsende. Wer drüber geht, behält alles — auch die ersten 2 Stunden. Negativer Saldo bleibt unangetastet.</div>
@@ -1097,7 +1136,7 @@ T T Ur Ur F"></textarea>
     </details>
 
     <details class="sdsec">
-      <summary>🌴 Urlaub & Feiertage</summary>
+      <summary><span class="icw" data-ico="sun"></span> Urlaub & Feiertage</summary>
       <div class="sdbody">
         <div class="field" style="margin-top:10px"><label class="fl">Urlaubsanspruch / Jahr (Tage)</label><input type="number" id="setUrlaub" step="0.5" min="0" placeholder="z.B. 30"></div>
         <div class="field"><label class="fl">Standardeintrag 24./31.12. (Halbtage)</label>
@@ -1113,7 +1152,7 @@ T T Ur Ur F"></textarea>
     </details>
 
     <details class="sdsec">
-      <summary>💾 Datensicherung</summary>
+      <summary><span class="icw" data-ico="save"></span> Datensicherung</summary>
       <div class="sdbody">
         <div class="note" style="font-size:11.5px;margin:10px 0 12px">Ohne Dropbox-Sync liegen alle Daten nur im Browser-Speicher — bei Reset, Cache-Löschen oder Handy-Wechsel sind sie weg. Mit Sync ist diese Datei ein zusätzliches Backup, z.B. vor größeren Änderungen.</div>
         <button class="act ghost" id="bkpExport">↓ Sicherung exportieren</button>
@@ -1205,7 +1244,7 @@ T T Ur Ur F"></textarea>
     <div class="bfundo" id="bfUndoRow" style="display:none">
       <button type="button" id="bfUndo">↶ Letzten rückgängig</button>
     </div>
-    <button class="act ghost" id="bfPause" style="margin-top:12px">⏸ Pause — später weitermachen</button>
+    <button class="act ghost" id="bfPause" style="margin-top:12px"><span class="icw" data-ico="pause"></span> Pause — später weitermachen</button>
   </div>
 </div>
 
@@ -1217,6 +1256,36 @@ T T Ur Ur F"></textarea>
 /* pad muss früh definiert sein - wird in persist/updateSaveSub via seedTemplate aufgerufen */
 const pad=n=>String(n).padStart(2,'0');
 /* Für alles, was aus Daten (Notizen, Import-Zeilen, Verlauf, Fehlermeldungen) in innerHTML oder ein Attribut geht */
+/* Einheitliche Linien-Symbole: ICO ist die einzige Quelle. Statisch: <span data-ico="name"></span> (wird beim Start befüllt), dynamisch: ico('name'). */
+const ICO={
+ plus:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+ grid:'<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
+ bars:'<path d="M5 20v-9M12 20V4M19 20v-6"/>',
+ download:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',
+ upload:'<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>',
+ history:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+ clipboard:'<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h4"/>',
+ camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+ note:'<path d="M5 19l1-4 10-10 3 3-10 10zM14 6l3 3"/>',
+ phone:'<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>',
+ calendar:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+ save:'<path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/>',
+ clock:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 3h6"/>',
+ printer:'<path d="M7 9V4h10v5M7 17H5v-6h14v6h-2"/><rect x="7" y="14" width="10" height="6"/>',
+ copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
+ file:'<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4"/>',
+ bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
+ scale:'<path d="M12 4v16M6 20h12M5 8h14M5 8l-3 7a3 3 0 0 0 6 0zM19 8l-3 7a3 3 0 0 0 6 0z"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',
+ pause:'<path d="M8 5v14M16 5v14"/>',
+ pulse:'<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',
+ alarm:'<circle cx="12" cy="13" r="7"/><path d="M12 9v4l2 2M5 4L3 6M19 4l2 2"/>',
+ shield:'<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/>',
+ bridge:'<path d="M3 18h18M5 18V8M19 18V8M5 10c4 5 10 5 14 0"/>'
+};
+function ico(n){return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICO[n]||''}</svg>`;}
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 /* ---------- storage ---------- */
 const KEY="ak_zeit_v1";
@@ -1315,6 +1384,8 @@ const undoer=tok=>tok?()=>undoEntry(tok):null;
 /* ---------- constants ---------- */
 const MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const WD=['So','Mo','Di','Mi','Do','Fr','Sa'];
+const WDL=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const longDate=d=>`${WDL[d.getDay()]}, ${d.getDate()}. ${MONTHS[d.getMonth()]}`;
 /* ---------- Feiertage & Halbtage (dynamisch berechnet) ---------- */
 function computeEaster(year){
   /* Gauß'sche Osterformel */
@@ -2090,6 +2161,80 @@ function yearCounts(){
   return c;
 }
 function fmtDays(n){return Number.isInteger(n)?String(n):n.toFixed(1).replace('.',',');}
+/* ---------- Brückentage ----------
+   Fenster = zusammenhängende freie Tage (Wochenende/Feiertag), die über 1–4 Arbeitstage hinweg zusammengelegt werden.
+   Rechnet mit Mo–Fr als Arbeitstagen und HOLIDAYS (Feiertage der Excel-Vorlage); halbe Tage (24./31.12.) zählen als Arbeitstag. */
+const BRIDGE_MAX_V=4,BRIDGE_MIN_RATIO=2.2;
+function findBridges(){
+  const y=DB.settings.year;
+  const today=new Date();today.setHours(12,0,0,0);
+  const from=new Date(Math.max(today.getTime(),new Date(y,0,1,12).getTime()));
+  const scanFrom=new Date(from);scanFrom.setDate(scanFrom.getDate()-14);
+  const decEnd=new Date(y,11,31,12);
+  const scanTo=new Date(decEnd);scanTo.setDate(scanTo.getDate()+16);
+  const isHolWd=d=>HOLIDAYS.includes(dateKey(d))&&d.getDay()!==0&&d.getDay()!==6;
+  const isFree=d=>d.getDay()===0||d.getDay()===6||HOLIDAYS.includes(dateKey(d));
+  const blocks=[];let cur=null;
+  for(let d=new Date(scanFrom);d<=scanTo;d.setDate(d.getDate()+1)){
+    if(isFree(d)){if(!cur)cur={s:new Date(d),e:new Date(d),hol:0};cur.e=new Date(d);if(isHolWd(d))cur.hol++;}
+    else if(cur){blocks.push(cur);cur=null;}
+  }
+  if(cur)blocks.push(cur);
+  const dn=(a,b)=>Math.round((b-a)/86400000);
+  const wins=[];
+  for(let i=0;i<blocks.length;i++){
+    let V=0,hol=blocks[i].hol;
+    for(let j=i+1;j<blocks.length;j++){
+      V+=dn(blocks[j-1].e,blocks[j].s)-1;hol+=blocks[j].hol;
+      if(V>BRIDGE_MAX_V)break;
+      const len=dn(blocks[i].s,blocks[j].e)+1;
+      if(hol>0&&V>=1&&len/V>=BRIDGE_MIN_RATIO&&blocks[j].e>=from&&blocks[i].s<=decEnd){
+        const vac=[];for(let d=new Date(blocks[i].s);d<=blocks[j].e;d.setDate(d.getDate()+1)){if(!isFree(d))vac.push(dateKey(d));}
+        wins.push({s:new Date(blocks[i].s),e:new Date(blocks[j].e),V,len,ratio:len/V,vac});
+      }
+    }
+  }
+  /* Beste zuerst, überlappende (schlechtere) Fenster verwerfen */
+  wins.sort((a,b)=>b.ratio-a.ratio||b.len-a.len);
+  const keep=[];
+  wins.forEach(w=>{if(!keep.some(k=>w.s<=k.e&&k.s<=w.e))keep.push(w);});
+  return keep.sort((a,b)=>a.s-b.s).slice(0,8);
+}
+function bridgeDays(vac){
+  /* "Mo 28.–Do 31.12." bzw. "Fr 15.05." bzw. getrennte Tage mit Komma */
+  const free=d=>d.getDay()===0||d.getDay()===6||HOLIDAYS.includes(dateKey(d));
+  const ds=vac.map(keyDate),fmt=d=>`${WD[d.getDay()]} ${pad(d.getDate())}.`;
+  const groups=[];
+  ds.forEach(d=>{
+    /* gehört zur vorigen Gruppe, wenn dazwischen nur freie Tage (z. B. Wochenende) liegen */
+    const g=groups[groups.length-1];let adj=!!g;
+    if(g){const x=new Date(g[g.length-1]);for(;;){x.setDate(x.getDate()+1);if(x>=d)break;if(!free(x)){adj=false;break;}}}
+    if(adj)g.push(d);else groups.push([d]);
+  });
+  return groups.map(g=>g.length===1?`${fmt(g[0])}${pad(g[0].getMonth()+1)}.`:`${fmt(g[0])}–${fmt(g[g.length-1])}${pad(g[g.length-1].getMonth()+1)}.`).join(', ');
+}
+function renderBridges(){
+  const box=document.getElementById('brBody');if(!box)return;
+  const list=findBridges();
+  document.getElementById('brCount').textContent=list.length?`${list.length} Tipp${list.length===1?'':'s'}`:'';
+  if(!list.length){box.innerHTML='<div class="brnote" style="margin:12px 0 0">In diesem Jahr gibt es keine lohnenden Brückentage mehr.</div>';return;}
+  const rest=(parseFloat(DB.settings.urlaubTotal)||0)>0?(()=>{const c=yearCounts();return DB.settings.urlaubTotal-(c.Urlaub+c['Urlaub 1/2']*0.5);})():null;
+  const rng=(a,b)=>`${WD[a.getDay()]} ${pad(a.getDate())}.${pad(a.getMonth()+1)}.–${WD[b.getDay()]} ${pad(b.getDate())}.${pad(b.getMonth()+1)}.`;
+  box.innerHTML='<div style="margin-top:6px">'+list.map((w,i)=>{
+    const have=w.vac.filter(k=>DB.entries[k]&&/^Urlaub/.test(DB.entries[k].cat)).length;
+    const done=have===w.vac.length;
+    const need=w.vac.length-have;
+    const warn=!done&&rest!==null&&need>rest?` · <span class="warn">Resturlaub reicht nicht (${fmtDays(rest)})</span>`:'';
+    return `<div class="brrow"><div class="brdate"><b>${rng(w.s,w.e)}</b><span>${w.len} Tage frei</span></div>
+      <div class="brneed"><b>${w.V} Urlaubstag${w.V===1?'':'e'}</b> · ${bridgeDays(w.vac)}${warn}</div>
+      ${done?'<span class="brdone">✓ eingetragen</span>':`<button type="button" class="wdok" data-br="${i}">Eintragen</button>`}</div>`;
+  }).join('')+'</div><div class="brnote">Rechnet mit Mo–Fr als Arbeitstagen und den Feiertagen deiner Excel-Vorlage. „Eintragen" legt die Tage als Urlaub an (du bestätigst Überschneidungen).</div>';
+  box.querySelectorAll('[data-br]').forEach(b=>b.onclick=()=>{
+    const w=list[+b.dataset.br];
+    const targets=w.vac.filter(k=>!(DB.entries[k]&&/^Urlaub/.test(DB.entries[k].cat))).map(k=>({k,entry:{cat:HALFDAYS.includes(k)?'Urlaub 1/2':'Urlaub'}}));
+    requestFill(targets,0,`Brückentage ${pad(w.s.getDate())}.${pad(w.s.getMonth()+1)}.–${pad(w.e.getDate())}.${pad(w.e.getMonth()+1)}.`);
+  });
+}
 function renderAbsence(){
   document.getElementById('absYear').textContent=DB.settings.year;
   const c=yearCounts();
@@ -2113,7 +2258,7 @@ function renderAbsence(){
     const restCls=rest<0?'neg':rest<3?'warn':'pos';
     html+=`<div class="urltank">
       <div class="urlrow">
-        <span class="urllbl">🌴 Urlaub</span>
+        <span class="urllbl">${ico("sun")} Urlaub</span>
         <span class="urlnums"><span class="urest ${restCls}">${fmtDays(rest)}</span> <span class="usuf">verbleibend</span></span>
       </div>
       <div class="urlbar"><div class="urlbarfill" style="width:${pct}%"></div></div>
@@ -2121,10 +2266,10 @@ function renderAbsence(){
     </div>`;
   }
   const rows=[];
-  if(total<=0)rows.push(`<div class="absrow"><span>🌴 Urlaub genommen</span><span class="av">${fmtDays(urlaub)}</span></div>`);
+  if(total<=0)rows.push(`<div class="absrow"><span>${ico("sun")} Urlaub genommen</span><span class="av">${fmtDays(urlaub)}</span></div>`);
   if(c['Urlaub 1/2'])rows.push(`<div class="absrow sub"><span>davon ½-Tage</span><span class="av">${c['Urlaub 1/2']}</span></div>`);
-  if(c.Krank)rows.push(`<div class="absrow"><span>🤒 Krank</span><span class="av">${fmtDays(c.Krank)}</span></div>`);
-  if(c.Ausgleichszeit)rows.push(`<div class="absrow"><span>⚖️ Ausgleichszeit</span><span class="av">${fmtDays(c.Ausgleichszeit)}</span></div>`);
+  if(c.Krank)rows.push(`<div class="absrow"><span>${ico("pulse")} Krank</span><span class="av">${fmtDays(c.Krank)}</span></div>`);
+  if(c.Ausgleichszeit)rows.push(`<div class="absrow"><span>${ico("scale")} Ausgleichszeit</span><span class="av">${fmtDays(c.Ausgleichszeit)}</span></div>`);
   if(c['Kompensationstag Grp1'])rows.push(`<div class="absrow"><span>Kompensationstag Grp1</span><span class="av">${c['Kompensationstag Grp1']}</span></div>`);
   if(c['Kompensationstag Grp2'])rows.push(`<div class="absrow"><span>Kompensationstag Grp2</span><span class="av">${c['Kompensationstag Grp2']}</span></div>`);
   if(c.Bereitschaft)rows.push(`<div class="absrow"><span>Bereitschaft</span><span class="av">${c.Bereitschaft}</span></div>`);
@@ -2166,6 +2311,7 @@ function renderDash(){
     fnEl.style.display='none';
   }
   renderAbsence();
+  renderBridges();
   renderShiftMix();
   renderSparkline();
   renderMonthCards();
@@ -2430,10 +2576,10 @@ function renderTodayCard(){
   if(DB.pending&&DB.pending.k!==k){
     card.style.display='block';
     const pd=keyDate(DB.pending.k);
-    dateEl.textContent=`${WD[today.getDay()]} ${pad(today.getDate())}.${pad(today.getMonth()+1)}.`;
+    dateEl.textContent=longDate(today);
     const sug=guessShift(DB.pending.kommen);
     body.innerHTML=`<div class="fgbox">
-      <div class="fgtxt">⏰ Du warst am <b>${WD[pd.getDay()]} ${pad(pd.getDate())}.${pad(pd.getMonth()+1)}.</b> noch eingestempelt (${DB.pending.kommen}) und hast nicht ausgestempelt.</div>
+      <div class="fgtxt">${ico("alarm")} Du warst am <b>${WD[pd.getDay()]} ${pad(pd.getDate())}.${pad(pd.getMonth()+1)}.</b> noch eingestempelt (${DB.pending.kommen}) und hast nicht ausgestempelt.</div>
       <div class="row2" style="margin:10px 0">
         <div class="field" style="margin:0"><label class="fl">Gehen-Zeit</label><input type="time" id="fgGehen" value="${sug?sug.g:''}"></div>
         <div style="display:flex;align-items:flex-end"><button class="act" style="margin:0" id="fgSave">Nachtragen</button></div>
@@ -2451,7 +2597,7 @@ function renderTodayCard(){
   const isWE=dow===0||dow===6;
   const isHol=HOLIDAYS.includes(k);
   card.style.display='block';
-  dateEl.textContent=`${WD[dow]} ${pad(today.getDate())}.${pad(today.getMonth()+1)}.${isWE?' · WE':isHol?' · Feiertag':''}`;
+  dateEl.textContent=longDate(today)+(isWE?' · Wochenende':isHol?' · Feiertag':'');
   const entry=DB.entries[k];
   if(DB.pending&&DB.pending.k===k){
     /* Läuft: Ticker-Ansicht */
@@ -2569,6 +2715,12 @@ function renderPlanCatch(){
     toast(v.length?`✓ ${n} laut Plan eingetragen · ⚠ ${v.length} Woche${v.length===1?'':'n'} über 48h`:`✓ ${n} Tag${n===1?'':'e'} laut Plan eingetragen`);
   };
 }
+let flagsExpanded=false,weekDoneExpanded=false;
+const LIST_PREVIEW=3;  /* Meldungslisten zeigen zuerst nur die ersten Einträge */
+function moreBtn(id,total,expanded){
+  if(total<=LIST_PREVIEW)return '';
+  return `<button type="button" class="morebtn" id="${id}">${expanded?'▴ weniger anzeigen':`▾ ${total-LIST_PREVIEW} weitere anzeigen`}</button>`;
+}
 function renderFlagCatch(){
   const card=document.getElementById('flagCatch');if(!card)return;
   const flagged=findFlaggedEntries();
@@ -2576,7 +2728,8 @@ function renderFlagCatch(){
   card.style.display='block';
   document.getElementById('flCount').textContent=`${flagged.length} Eintrag${flagged.length===1?'':'e'}`;
   const list=document.getElementById('flList');
-  list.innerHTML=flagged.map(f=>{
+  const shown=flagsExpanded?flagged:flagged.slice(0,LIST_PREVIEW);
+  list.innerHTML=shown.map(f=>{
     const d=keyDate(f.k);
     const dtxt=`${WD[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`;
     const vtxt=esc(fmtEntry(f.e));
@@ -2584,12 +2737,13 @@ function renderFlagCatch(){
       <div class="flrow" data-goto="${f.k}"><span class="fldate">${dtxt}</span><span class="flval">${vtxt}</span></div>
       <div class="fldet">${f.flags.join(' · ')}</div>
       <div class="flacts">
-        <button class="flok" data-ok="${f.k}">✓ Ist so richtig</button>
-        <button class="fledit" data-edit="${f.k}">✎ Bearbeiten</button>
-        ${f.e.cat==='Arbeit'&&!f.e.noMinus?`<button class="flnm" data-nm="${f.k}">🛡 Kein Minus – Ausfall nicht selbst verschuldet</button>`:''}
+        <button class="flok" data-ok="${f.k}" title="Ist so richtig">✓ Passt</button>
+        <button class="fledit" data-edit="${f.k}">✎ Ändern</button>
+        ${f.e.cat==='Arbeit'&&!f.e.noMinus?`<button class="flnm" data-nm="${f.k}" title="Ausfall nicht selbst verschuldet" aria-label="Kein Minus – Ausfall nicht selbst verschuldet">${ico("shield")} Kein Minus</button>`:''}
       </div>
     </div>`;
-  }).join('');
+  }).join('')+moreBtn('flMore',flagged.length,flagsExpanded);
+  const fm=document.getElementById('flMore');if(fm)fm.onclick=()=>{flagsExpanded=!flagsExpanded;renderFlagCatch();};
   list.querySelectorAll('[data-nm]').forEach(b=>b.onclick=()=>{
     const k=b.dataset.nm,e=DB.entries[k];if(!e)return;
     const tok=setEntry(k,Object.assign({},e,{noMinus:true}));
@@ -2805,7 +2959,7 @@ function dayRow(k){
   if(e&&e.noMinus)badges.push('<span class="badge" style="color:var(--amber);border-color:#5a4a1f">kein Minus</span>');
   if(r.hasT){tm=`${e.k}–${e.g}`;meta=`<span class="meta">${badges.join(' ')}<span>Pause ${minToH(r.pause)}</span></span>`;}
   else{tm=r.cat==='Arbeit'?'<span style="color:var(--mut)">—</span>':catShort(r.cat);meta=badges.length?`<span class="meta">${badges.join(' ')}</span>`:'';}
-  const noteRow=e&&e.note?`<div class="dnote">📝 ${esc(e.note)}</div>`:'';
+  const noteRow=e&&e.note?`<div class="dnote">${ico("note")} ${esc(e.note)}</div>`:'';
   const dc=r.diff>0?'pos':r.diff<0?'neg':'zero';
   const right=r.diff!=null?`<div class="diff ${dc}">${sgn(r.diff)}</div><div class="ist">${r.ist!=null?'Ist '+minToH(r.ist):'Soll '+minToH(Math.abs(r.soll))}</div>`:`<div class="ist">—</div>`;
   return `<div class="${cls}">
@@ -2863,11 +3017,13 @@ function renderWeekDone(){
   if(!open.length){card.style.display='none';return;}
   card.style.display='block';
   document.getElementById('wdCount').textContent=`${open.length} Woche${open.length===1?'':'n'}`;
-  document.getElementById('wdList').innerHTML=open.map(x=>{
+  const shownWk=weekDoneExpanded?open:open.slice(0,LIST_PREVIEW);
+  document.getElementById('wdList').innerHTML=shownWk.map(x=>{
     const md=`${pad(x.mon.getDate())}.${pad(x.mon.getMonth()+1)}.`,fd=`${pad(x.fri.getDate())}.${pad(x.fri.getMonth()+1)}.`;
     const cls=x.net>0?'pos':'neg';
     return `<div class="wdrow"><div class="wdinfo"><b>KW ${pad(x.w)}</b><span>${md}–${fd}</span></div><div class="wdnet ${cls}">${sgn(x.net)}<small>${x.net>0?'Plus':'Minus'}</small></div><button type="button" class="wdok" data-wk="${x.id}">✓ übertragen</button></div>`;
-  }).join('');
+  }).join('')+moreBtn('wdMore',open.length,weekDoneExpanded);
+  const wm=document.getElementById('wdMore');if(wm)wm.onclick=()=>{weekDoneExpanded=!weekDoneExpanded;renderWeekDone();};
   card.querySelectorAll('[data-wk]').forEach(b=>b.onclick=()=>{
     const id=b.dataset.wk;setWeekDone(id,true);renderWeekDone();renderOT();
     toast('✓ Als übertragen markiert',()=>{setWeekDone(id,false);renderWeekDone();renderOT();});
@@ -2883,7 +3039,7 @@ function renderOT(){
   const weeks=otWeeks();let tot=0;weeks.forEach(x=>tot+=x.net);
   document.getElementById('otTotal').textContent=sgn(tot);
   const box=document.getElementById('otList');
-  if(!weeks.length){box.innerHTML=`<div class="empty" style="padding:24px"><div class="big">▲</div>Keine Überstunden ${otScopeVal==='month'?'im '+MONTHS[curMonth]:DB.settings.year}.<br>Ausgeglichene Wochen zählen nicht.</div>`;return;}
+  if(!weeks.length){box.innerHTML=`<div class="empty" style="padding:24px"><div class="big">${ico("bars")}</div>Keine Überstunden ${otScopeVal==='month'?'im '+MONTHS[curMonth]:DB.settings.year}.<br>Ausgeglichene Wochen zählen nicht.</div>`;return;}
   box.innerHTML=weeks.map(x=>{
     const md=`${pad(x.mon.getDate())}.${pad(x.mon.getMonth()+1)}.`,fd=`${pad(x.fri.getDate())}.${pad(x.fri.getMonth()+1)}.`;
     let days='';
@@ -2929,6 +3085,7 @@ function buildOtReport(){
     </table>
     <div class="prbottom">
       <table class="prsum"><tbody><tr class="total"><td>Überstunden gesamt (${weeks.length} Woche${weeks.length===1?'':'n'})</td><td class="num pos">${sgn(tot)}</td></tr></tbody></table>
+      <div class="prsign"><div>Datum, Unterschrift Mitarbeiter/in</div><div>Datum, Unterschrift Vorgesetzte/r</div></div>
       <div class="prfoot"><span>Wochensoll ${DB.settings.weekHours}h · ${DB.settings.workDays} Tage/Woche</span><span>AK-Zeit</span></div>
     </div>`;
 }
@@ -2955,8 +3112,8 @@ document.getElementById('otCopy').onclick=()=>{
     return lines.join('\n');
   });
   const txt=`Überstunden ${otScopeVal==='month'?MONTHS[curMonth]+' ':''}${DB.settings.year}\n\n${blocks.join('\n\n')}\n\n— Gesamt: ${sgn(tot)}`;
-  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('📋 Kopiert')).catch(()=>{
-    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('📋 Kopiert');}catch(e){toast('Kopieren nicht möglich');}ta.remove();
+  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('✓ Kopiert')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('✓ Kopiert');}catch(e){toast('Kopieren nicht möglich');}ta.remove();
   });
 };
 
@@ -3222,6 +3379,7 @@ function buildReport(m){
     </table>
     <div class="prbottom">
       <table class="prsum"><tbody>${sumRows.join('')}</tbody></table>
+      <div class="prsign"><div>Datum, Unterschrift Mitarbeiter/in</div><div>Datum, Unterschrift Vorgesetzte/r</div></div>
       <div class="prfoot"><span>Wochensoll ${DB.settings.weekHours}h · ${DB.settings.workDays} Tage/Woche</span><span>itsokwithanak · AK-Zeit</span></div>
     </div>
   `;
@@ -4306,7 +4464,7 @@ document.getElementById('tplFile').onchange=async ev=>{
     renderPreview();
     /* Mit Dropbox: Vorlage dort hinterlegen -> andere Geräte laden sie automatisch */
     if(dbxConnected())dbxUploadFile(DBX_TPL,f).then(()=>toast('☁ Vorlage in Dropbox hinterlegt')).catch(err=>console.error('[Vorlage]',err));
-  }catch(e){tplFiles=null;lbl.textContent='📄 Vorlage (.xlsx) wählen';lbl.classList.remove('has');toast('⚠ '+e.message);document.getElementById('pvCard').style.display='none';}
+  }catch(e){tplFiles=null;lbl.textContent='Vorlage (.xlsx) wählen';lbl.classList.remove('has');toast('⚠ '+e.message);document.getElementById('pvCard').style.display='none';}
   ev.target.value='';
 };
 
@@ -4353,10 +4511,10 @@ function updateExportState(){
   if(lt){
     const d=new Date(lt);
     lastTxt.classList.add('ok');
-    lastTxt.innerHTML=`<span>📤 Letzter Export</span><b>${WD[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}. · ${pad(d.getHours())}:${pad(d.getMinutes())}</b>`;
+    lastTxt.innerHTML=`<span>${ico("upload")} Letzter Export</span><b>${WD[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}. · ${pad(d.getHours())}:${pad(d.getMinutes())}</b>`;
   } else {
     lastTxt.classList.remove('ok');
-    lastTxt.innerHTML='<span>📤 Noch nicht exportiert</span>';
+    lastTxt.innerHTML=`<span>${ico('upload')} Noch nicht exportiert</span>`;
   }
   document.getElementById('dbxExpBtn').style.display=dbxConnected()?'':'none';
   document.getElementById('expNotes').value=DB.settings.exportNotes||'nominus';
@@ -4498,7 +4656,7 @@ document.getElementById('dbxExpBtn').onclick=()=>runExport(document.getElementBy
 /* ---------- Verlauf / Log ---------- */
 function fmtEntry(e){
   if(!e)return '—';
-  const noteTxt=(e.noMinus?' · kein Minus':'')+(e.note?` 📝 „${e.note}"`:'');
+  const noteTxt=(e.noMinus?' · kein Minus':'')+(e.note?` · „${e.note}"`:'');
   if(e.k&&e.g)return `${e.k}–${e.g}${e.cat&&e.cat!=='Arbeit'?` [${e.cat}]`:''}${noteTxt}`;
   return catShort(e.cat)+noteTxt;
 }
@@ -4571,7 +4729,7 @@ function renderLog(){
   clear.style.display=hasAny?'':'none';
   if(!log.length){
     const msg=hasAny?`Keine Einträge in Filter "${logFilter}".`:'Noch keine Aktivität.';
-    box.innerHTML=`<div class="empty"><div class="big">📜</div>${msg}</div>`;return;
+    box.innerHTML=`<div class="empty"><div class="big">${ico("history")}</div>${msg}</div>`;return;
   }
   const groups={};
   log.forEach(ev=>{const d=new Date(ev.ts);const gk=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;(groups[gk]=groups[gk]||[]).push(ev);});
@@ -4630,6 +4788,7 @@ function handleShortcut(){
 if(!Store.ok)document.getElementById('storageWarn').style.display='block';
 updateSaveSub(false);
 fillShiftLabels();updateSpaetLabel();
+document.querySelectorAll('[data-ico]').forEach(el=>{el.innerHTML=ico(el.dataset.ico);});  /* statische Symbole füllen */
 booted=true;
 applyAccent();
 document.addEventListener('visibilitychange',()=>{
