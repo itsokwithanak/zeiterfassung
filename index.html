@@ -351,6 +351,7 @@ details[open] .vsum::before{transform:rotate(90deg)}
 .wb.plan.spaet{border-color:#ff9d4d;background:rgba(255,157,77,.08)}
 .wb.plan.urlaub{border-color:var(--amber);background:rgba(255,194,77,.08)}
 .wb.live{box-shadow:0 0 0 2px rgba(var(--neon-rgb),.35)}
+.wblabel{position:absolute;top:0;height:32px;display:flex;align-items:center;font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--ink);white-space:nowrap}
 .wnow{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink);border-radius:1px;z-index:2}
 html[data-theme="light"] .wb.plan{color:var(--ink)}
 /* Saldo-Detail-Modal */
@@ -489,7 +490,9 @@ html[data-theme="light"] .wb.plan{color:var(--ink)}
 .fldate{font-family:var(--mono);font-size:12.5px;color:var(--ink);font-weight:700}
 .flval{font-family:var(--mono);font-size:11.5px;color:var(--mut)}
 .fldet{font-family:var(--mono);font-size:11px;color:var(--amber);line-height:1.5;margin-bottom:8px}
-.flacts{display:flex;gap:7px}
+.flacts{display:flex;gap:7px;flex-wrap:wrap}
+.flacts .flnm{flex:1 1 100%;background:rgba(255,194,77,.1);border:1px solid rgba(255,194,77,.35);color:var(--amber);min-height:40px}
+.flacts .flnm:active{background:var(--amber);color:var(--bg)}
 .flacts button{flex:1;font-family:var(--mono);font-size:11px;padding:7px;border-radius:7px;cursor:pointer}
 .flok{background:rgba(var(--neon-rgb),.1);border:1px solid var(--neon-dim);color:var(--neon-soft)}
 .flok:active{background:var(--neon);color:var(--on-neon)}
@@ -726,6 +729,7 @@ nav button.on .ic{filter:drop-shadow(0 0 8px rgba(var(--neon-rgb),.6))}
       <div class="field"><label class="fl">Notiz <span class="flopt">(optional)</span></label>
         <input type="text" id="sNote" maxlength="120" placeholder="z.B. Für Mike eingesprungen">
       </div>
+      <label class="chk" id="sNoMinusRow" style="margin-bottom:14px"><input type="checkbox" id="sNoMinus"><span>Kein Minus – Ausfall nicht selbst verschuldet (z.B. Kollege krank, Alleinarbeit verboten)</span></label>
       <div id="sLive" class="note" style="display:none"></div>
       <button class="act" id="sSave" style="margin-top:6px">Speichern</button>
       <button class="act ghost" id="sDel" style="margin-top:8px;display:none">Eintrag löschen</button>
@@ -847,6 +851,20 @@ T T Ur Ur F"></textarea>
       </div>
       <div id="todayBody"></div>
     </div>
+    <div class="card" id="weekLive" style="display:none">
+      <div class="wlhdr">
+        <span class="wllbl">DIESE WOCHE</span>
+        <span class="wlkw" id="wlKw">KW —</span>
+      </div>
+      <div class="wband" id="wlDays"></div>
+      <div class="wlnums">
+        <div class="wlcell"><div class="wlk">Ist</div><div class="wlv" id="wlIst">0:00</div></div>
+        <div class="wlcell"><div class="wlk">Soll bisher</div><div class="wlv" id="wlSoll">0:00</div></div>
+        <div class="wlcell"><div class="wlk">Saldo</div><div class="wlv" id="wlDiff">0:00</div></div>
+      </div>
+      <div class="wlbar"><div class="wlbarfill" id="wlBarFill"></div></div>
+      <div class="wlnote" id="wlNote"></div>
+    </div>
     <div class="card" id="planCatch" style="display:none">
       <div class="pchdr">
         <span class="pclbl">📋 PLAN-RÜCKSTAND</span>
@@ -869,20 +887,6 @@ T T Ur Ur F"></textarea>
       </div>
       <div id="wdList"></div>
       <button type="button" class="act ghost" id="wdAll" style="margin-top:8px;font-size:11.5px;padding:9px">Alle als übertragen markieren</button>
-    </div>
-    <div class="card" id="weekLive" style="display:none">
-      <div class="wlhdr">
-        <span class="wllbl">DIESE WOCHE</span>
-        <span class="wlkw" id="wlKw">KW —</span>
-      </div>
-      <div class="wband" id="wlDays"></div>
-      <div class="wlnums">
-        <div class="wlcell"><div class="wlk">Ist</div><div class="wlv" id="wlIst">0:00</div></div>
-        <div class="wlcell"><div class="wlk">Soll bisher</div><div class="wlv" id="wlSoll">0:00</div></div>
-        <div class="wlcell"><div class="wlk">Saldo</div><div class="wlv" id="wlDiff">0:00</div></div>
-      </div>
-      <div class="wlbar"><div class="wlbarfill" id="wlBarFill"></div></div>
-      <div class="wlnote" id="wlNote"></div>
     </div>
     <div class="card glow tapp" id="balCard" data-open-bal="1">
       <div class="balhero">
@@ -1496,6 +1500,8 @@ function compute(k,e){
   if(cat==="Ausgleichszeit"||cat==="Kompensationstag Grp2") diff=soll;
   else if(cat==="Krank") diff=soll;
   else if(hasT) diff=ist-soll;
+  /* "Kein Minus" (Ausfall nicht selbst verschuldet, z.B. Kollege krank): zu kurzer Tag gilt als erfüllt -> Soll = Ist, Saldo ±0. Mehrarbeit bleibt Plus. */
+  if(hasT&&e.noMinus&&cat==="Arbeit"&&ist<soll){soll=ist;diff=0;}
   return {weekend,hol,half,cat,cd,gross,pause,ist,soll,diff,hasT};
 }
 
@@ -1670,6 +1676,7 @@ function toggleTimes(catEl,timesEl){
   if(catEl.id==='sCat'){
     const qs=document.getElementById('sQuickShifts');
     if(qs)qs.classList.toggle('hidden',!show);
+    const nm=document.getElementById('sNoMinusRow');if(nm)nm.style.display=catEl.value==='Arbeit'?'':'none';
   }
 }
 function updateSpaetLabel(){
@@ -1701,6 +1708,7 @@ function liveSingle(){
   const e={cat:sCat.value,k:document.getElementById('sK').value,g:document.getElementById('sG').value};
   const pVal=document.getElementById('sPause').value;
   if(pVal!==''){const pNum=parseInt(pVal);if(!isNaN(pNum)&&pNum>=0)e.pauseOverride=pNum;}
+  if(sCat.value==='Arbeit'&&document.getElementById('sNoMinus').checked)e.noMinus=true;
   const r=compute(k,e);const box=document.getElementById('sLive');
   if(cd.times&&!(e.k&&e.g)){box.style.display='none';return;}
   let html;
@@ -1797,11 +1805,13 @@ function loadSingle(){
   if(e){sCat.value=e.cat||'Arbeit';document.getElementById('sK').value=e.k||'';document.getElementById('sG').value=e.g||'';
     if(noteEl)noteEl.value=e.note||'';
     if(pauseEl)pauseEl.value=e.pauseOverride!=null?e.pauseOverride:'';
+    document.getElementById('sNoMinus').checked=!!e.noMinus;
     del.style.display='';save.textContent='Aktualisieren';}
   else{del.style.display='none';save.textContent='Speichern';
     /* Clear form when switching to empty day */
     sCat.value='Arbeit';document.getElementById('sK').value='';document.getElementById('sG').value='';
     if(noteEl)noteEl.value='';
+    document.getElementById('sNoMinus').checked=false;
     if(pauseEl)pauseEl.value='';}
   toggleTimes(sCat,sTimes);
   updateSpaetLabel();
@@ -1810,6 +1820,7 @@ function loadSingle(){
   renderWeekStrip();
 }
 document.getElementById('sDate').addEventListener('change',()=>{loadSingle();liveSingle();});
+document.getElementById('sNoMinus').addEventListener('change',liveSingle);
 loadSingle();liveSingle();
 
 /* save single */
@@ -1822,6 +1833,7 @@ document.getElementById('sSave').onclick=()=>{
     e.k=kk;e.g=gg;}
   const nt=document.getElementById('sNote').value.trim();
   if(nt)e.note=nt;
+  if(sCat.value==='Arbeit'&&document.getElementById('sNoMinus').checked)e.noMinus=true;
   const pVal=document.getElementById('sPause').value;
   if(pVal!==''&&cd.times){const pNum=parseInt(pVal);if(!isNaN(pNum)&&pNum>=0)e.pauseOverride=pNum;}
   if(sCat.value==='Arbeit'&&!confirm48h({[k]:e}))return;
@@ -2567,9 +2579,16 @@ function renderFlagCatch(){
       <div class="flacts">
         <button class="flok" data-ok="${f.k}">✓ Ist so richtig</button>
         <button class="fledit" data-edit="${f.k}">✎ Bearbeiten</button>
+        ${f.e.cat==='Arbeit'&&!f.e.noMinus?`<button class="flnm" data-nm="${f.k}">🛡 Kein Minus – Ausfall nicht selbst verschuldet</button>`:''}
       </div>
     </div>`;
   }).join('');
+  list.querySelectorAll('[data-nm]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.nm,e=DB.entries[k];if(!e)return;
+    const tok=setEntry(k,Object.assign({},e,{noMinus:true}));
+    persist();renderDash();refreshCals();
+    toast('✓ „Kein Minus" gesetzt',undoer(tok));
+  });
   list.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>{
     DB.flagsReviewed[b.dataset.ok]=true;
     persist();
@@ -2594,7 +2613,11 @@ function weekBar(k,e,d,isToday,isPast,isHol,nowMin){
   /* Ein Balken (oder Hinweis-Feld) für einen Tag der Wochenzeitleiste */
   const bar=(s,en,kind,txt,extra)=>{
     if(en<=s)en=1440;  /* über Mitternacht: bis zum Rand */
-    const l=bandPct(s),w=Math.max(bandPct(en)-l,7);
+    const l=bandPct(s),w=Math.max(bandPct(en)-l,3);
+    if(w<24){  /* kurzer Einsatz: Text passt nicht in den Balken -> daneben (rechts, am rechten Rand links) */
+      const side=l+w<=68?`left:calc(${l+w}% + 6px)`:`right:calc(${100-l}% + 6px)`;
+      return `<div class="wb ${kind}${extra||''}" style="left:${l}%;width:${w}%" aria-label="${txt}"></div><span class="wblabel" style="${side}">${txt}</span>`;
+    }
     return `<div class="wb ${kind}${extra||''}" style="left:${l}%;width:${w}%">${txt}</div>`;
   };
   const chip=(kind,txt)=>`<div class="wb chip ${kind}">${txt}</div>`;
@@ -2772,6 +2795,7 @@ function dayRow(k){
   else if(r.weekend)badges.push('<span class="badge we">WE</span>');
   if(r.half)badges.push('<span class="badge" style="color:var(--neon-soft);border-color:var(--neon-dim)">½-Tag</span>');
   if(r.cat!=='Arbeit')badges.push(`<span class="badge">${catShort(r.cat)}</span>`);
+  if(e&&e.noMinus)badges.push('<span class="badge" style="color:var(--amber);border-color:#5a4a1f">kein Minus</span>');
   if(r.hasT){tm=`${e.k}–${e.g}`;meta=`<span class="meta">${badges.join(' ')}<span>Pause ${minToH(r.pause)}</span></span>`;}
   else{tm=r.cat==='Arbeit'?'<span style="color:var(--mut)">—</span>':catShort(r.cat);meta=badges.length?`<span class="meta">${badges.join(' ')}</span>`:'';}
   const noteRow=e&&e.note?`<div class="dnote">📝 ${esc(e.note)}</div>`:'';
@@ -3166,7 +3190,7 @@ function buildReport(m){
       if(r.ist!=null)ist=minToH(r.ist);
       if(r.diff!=null)diff=`<span class="${r.diff>0?'pos':r.diff<0?'neg':''}">${sgn(r.diff)}</span>`;
     }
-    const noteC=e&&e.note?`<div class="prnote">${esc(e.note)}</div>`:'';
+    const noteC=(e&&e.note?`<div class="prnote">${esc(e.note)}</div>`:'')+(e&&e.noMinus?'<div class="prnote">kein Minus – Ausfall nicht selbst verschuldet</div>':'');
     rows+=`<tr class="${cls}"><td>${WD[dow]} ${pad(d)}.${pad(m+1)}.</td><td>${art}${noteC}</td><td class="num">${zeit}</td><td class="num">${pause}</td><td class="num">${ist}</td><td class="num">${diff}</td></tr>`;
     d++;
   }
@@ -3538,11 +3562,12 @@ function plausibilityFlags(k,entry,weekAvgIst){
   const ist=compute(k,entry).ist;
   const istH=ist/60;
   if(istH>10)flags.push(`Sehr lang: ${minToH(ist)} an einem Tag`);
-  if(istH>0&&istH<=3)flags.push(`Sehr kurz: nur ${minToH(ist)}`);
+  if(istH>0&&istH<=3&&!entry.noMinus)flags.push(`Sehr kurz: nur ${minToH(ist)}`);
   if(kMin<240)flags.push(`Kommen sehr früh: ${entry.k}`);       /* vor 04:00 -- unter der frühesten reguären Schicht */
   if(kMin>900)flags.push(`Kommen sehr spät: ${entry.k}`);        /* nach 15:00 -- nach Spätschicht-Start */
   if(gMin>1380&&gMin<1440)flags.push(`Gehen sehr spät: ${entry.g}`); /* nach 23:00 */
-  if(weekAvgIst!=null&&Math.abs(istH-weekAvgIst)>2)flags.push(`Weicht >2h vom Wochenschnitt ab (Ø ${weekAvgIst.toFixed(1)}h)`);
+  const wkEnd=[0,6].includes(keyDate(k).getDay());  /* Wochenend-Einsätze sind naturgemäß kürzer: kein Vergleich mit dem Wochenschnitt */
+  if(weekAvgIst!=null&&!wkEnd&&!entry.noMinus&&Math.abs(istH-weekAvgIst)>2)flags.push(`Weicht >2h vom Wochenschnitt ab (Ø ${weekAvgIst.toFixed(1)}h)`);
   return flags;
 }
 function weekAvgIstFor(k,batchByKey){
@@ -4454,7 +4479,7 @@ document.getElementById('dbxExpBtn').onclick=()=>runExport(document.getElementBy
 /* ---------- Verlauf / Log ---------- */
 function fmtEntry(e){
   if(!e)return '—';
-  const noteTxt=e.note?` 📝 „${e.note}"`:'';
+  const noteTxt=(e.noMinus?' · kein Minus':'')+(e.note?` 📝 „${e.note}"`:'');
   if(e.k&&e.g)return `${e.k}–${e.g}${e.cat&&e.cat!=='Arbeit'?` [${e.cat}]`:''}${noteTxt}`;
   return catShort(e.cat)+noteTxt;
 }
